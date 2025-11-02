@@ -1,22 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>ESC/POS Printer Monitor</title>
-</head>
-<body style="display: flex;flex-direction: column;min-height: 100vh;">
-<div id="page" style="flex-grow: 1;">
-    <h1>Printer Status:</h1>
-    <ul>
-        <li>Online</li>
-        <li>Printer Address: {{host}}</li>
-        <li>Print Ports: {{jetDirectPort}} (Jetdirect), 515 (lpd)</li>
-        {%if debug == 'True'%}
-            <li><b style="color:#8B0000">Debug mode enabled</b></li>
-        {%endif%}
-    </ul>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESC/POS Network Printer Plus</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <a href="/receipts">View printed receipts list</a>
-</div>
-{% include 'footer.html' %}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        #app {
+            flex: 1;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.35em;
+            font-weight: 500;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .printer-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .printer-display {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .printer-image-container {
+            position: relative;
+            width: 100%;
+            max-width: 1040px;
+            margin: 0 auto;
+            margin-top: 10%;
+        }
+
+        .printer-image {
+            width: 100%;
+            max-width: 110%;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 40px rgba(102, 126, 234, 0.3));
+        }
+
+        .receipt-preview {
+            position: absolute;
+            top: -12%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 42%;
+            height: 50%;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+        }
+
+        .receipt-preview iframe {
+            width: 200%;
+            height: 200%;
+            border: none;
+            transform: scale(0.5);
+            transform-origin: top left;
+        }
+
+        .stats-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .stats-panel h2 {
+            color: #1f2937;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 3em;
+            font-weight: 700;
+        }
+
+        .latest-receipt {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .latest-receipt h3 {
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .receipt-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 500;
+            transition: transform 0.2s;
+            border: 2px solid #e5e7eb;
+        }
+
+        .receipt-link:hover {
+            transform: translateX(5px);
+            border-color: #667eea;
+        }
+
+        .no-receipts {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+        }
+
+        .footer-nav {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            text-align: center;
+            border-radius: 16px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        }
+
+        .footer-nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .footer-nav a:hover {
+            color: #764ba2;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 9V2h12v7" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18 14h.01M6 19a2 2 0 012-2h8a2 2 0 012 2v3H6v-3z" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                ESC/POS Network Printer Plus
+                <span class="status-badge">
+                    <span class="pulse"></span>
+                    Online
+                </span>
+            </h1>
+
+            <div class="printer-info">
+                <div class="info-card">
+                    <div class="info-label">Printer Address</div>
+                    <div class="info-value">{{host}}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Print Port (JetDirect)</div>
+                    <div class="info-value">{{jetDirectPort}}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">LPD Port</div>
+                    <div class="info-value">515</div>
+                </div>
+                {%if debug == 'True'%}
+                <div class="info-card" style="border-left-color: #dc2626;">
+                    <div class="info-label">Mode</div>
+                    <div class="info-value" style="color: #dc2626;">Debug Enabled</div>
+                </div>
+                {%endif%}
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="printer-display">
+                <div class="printer-image-container">
+                    <img src="/static/pos-printer.webp" alt="POS Printer" class="printer-image">
+                    <div v-if="latestReceipt && latestReceipt.url" class="receipt-preview">
+                        <div v-html="receiptHtml" style="width: 100%; height: 100%; overflow: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-panel">
+                <h2>Statistics</h2>
+
+                <div v-if="loading" class="loading">
+                    <div class="spinner"></div>
+                    Loading data...
+                </div>
+
+                <template v-else>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Receipts Printed</div>
+                        <div class="stat-value">[[ receiptCount ]]</div>
+                    </div>
+
+                    <div class="latest-receipt">
+                        <h3>Latest Receipt</h3>
+                        <a v-if="latestReceipt && latestReceipt.filename"
+                           :href="latestReceipt.url"
+                           class="receipt-link">
+                            <span>[[ latestReceipt.filename ]]</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                        <div v-else class="no-receipts">
+                            No receipts yet. Send a print job to get started!
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div class="footer-nav">
+            <a href="/">Home</a>
+            <a href="/receipts">View All Receipts</a>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            data() {
+                return {
+                    receiptCount: 0,
+                    latestReceipt: null,
+                    receiptHtml: '',
+                    loading: true
+                }
+            },
+            methods: {
+                async fetchData() {
+                    try {
+                        const [countRes, latestRes] = await Promise.all([
+                            fetch('/api/receipts/count'),
+                            fetch('/api/receipts/latest')
+                        ]);
+
+                        const countData = await countRes.json();
+                        const latestData = await latestRes.json();
+
+                        this.receiptCount = countData.count;
+                        this.latestReceipt = latestData;
+
+                        // Fetch receipt HTML
+                        if (latestData && latestData.url) {
+                            const receiptRes = await fetch(latestData.url + '?t=' + Date.now());
+                            this.receiptHtml = await receiptRes.text();
+                        }
+
+                        this.loading = false;
+                    } catch (error) {
+                        console.error('Error fetching data:', error);
+                        this.loading = false;
+                    }
+                }
+            },
+            mounted() {
+                this.fetchData();
+
+                // Server-Sent Events for real-time updates
+                const eventSource = new EventSource('/api/receipts/stream');
+
+                eventSource.onmessage = async (event) => {
+                    try {
+                        const data = eval('(' + event.data + ')');
+                        this.receiptCount = data.count;
+                        this.latestReceipt = data.latest;
+
+                        // Fetch new receipt HTML
+                        if (data.latest && data.latest.url) {
+                            const receiptRes = await fetch(data.latest.url + '?t=' + Date.now());
+                            this.receiptHtml = await receiptRes.text();
+                        }
+                    } catch (error) {
+                        console.error('Error parsing SSE data:', error);
+                    }
+                };
+
+                eventSource.onerror = (error) => {
+                    console.error('SSE Error:', error);
+                };
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>

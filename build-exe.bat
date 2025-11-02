@@ -52,7 +52,11 @@ python -m PyInstaller ^
     --add-data="escpos-netprinter.py;." ^
     --add-data="templates;templates" ^
     --add-data="web;web" ^
-    --hidden-import=win10toast ^
+    --add-data="php;php" ^
+    --add-data="esc2html.php;." ^
+    --add-data="vendor;vendor" ^
+    --add-data="src;src" ^
+    --hidden-import=winotify ^
     --hidden-import=pystray ^
     --hidden-import=PIL ^
     --hidden-import=flask ^
@@ -77,9 +81,9 @@ echo  Build Complete!
 echo ====================================================
 echo.
 echo  EXE Location: dist\ESC-POS-Printer.exe
-echo  Size: ~37 MB
+echo  Size: ~70 MB (includes portable PHP)
 echo.
-echo  You can now run the EXE without Python installed!
+echo  Fully standalone - no Python or PHP installation required!
 echo ====================================================
 echo.
 

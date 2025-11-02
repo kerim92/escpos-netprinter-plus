@@ -18,17 +18,15 @@ import socketserver
 # Platform detection and notification setup
 SYSTEM_PLATFORM = platform.system()
 NOTIFICATIONS_ENABLED = False
-toaster = None
 
 if SYSTEM_PLATFORM == 'Windows':
     try:
-        from win10toast import ToastNotifier
-        toaster = ToastNotifier()
+        from winotify import Notification
         NOTIFICATIONS_ENABLED = True
         print(f"[OK] Platform: Windows - Toast notifications enabled (tested)")
     except ImportError:
-        print("[WARNING] win10toast not installed - notifications disabled")
-        print("   Install: pip install win10toast")
+        print("[WARNING] winotify not installed - notifications disabled")
+        print("   Install: pip install winotify")
 elif SYSTEM_PLATFORM == 'Darwin':  # macOS
     # macOS notification support (untested)
     NOTIFICATIONS_ENABLED = True
@@ -1443,11 +1441,22 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
     def print_toHTML(self, binfile:BufferedWriter, bin_filename:PurePath):
 
         print("Printing ", binfile.name)
+
+        # Determine PHP executable path
+        # Use portable PHP from php/ directory (bundled with EXE or in project root)
+        php_exe = BASE_DIR / 'php' / 'php.exe'
+        if not php_exe.exists():
+            # Fallback to system PHP if portable PHP not found
+            php_exe = 'php'
+            print(f"[WARNING] Portable PHP not found at {php_exe}, using system PHP")
+        else:
+            print(f"[OK] Using portable PHP: {php_exe}")
+
         try:
             if self.netprinter_debugmode == 'True':
-                recu:CompletedProcess = subprocess.run(["php", "esc2html.php", "--debug", bin_filename.as_posix()], capture_output=True, text=True, check=True)
+                recu:CompletedProcess = subprocess.run([str(php_exe), "esc2html.php", "--debug", bin_filename.as_posix()], capture_output=True, text=True, check=True)
             else:
-                recu:CompletedProcess = subprocess.run(["php", "esc2html.php", bin_filename.as_posix()], capture_output=True, text=True, check=True)
+                recu:CompletedProcess = subprocess.run([str(php_exe), "esc2html.php", bin_filename.as_posix()], capture_output=True, text=True, check=True)
 
         except subprocess.CalledProcessError as err:
             print(f"Error while converting receipt: {err.returncode}")
@@ -1493,7 +1502,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
 
                     # Platform-specific notification (thread'de calistir - blocking olmasin)
                     def show_notification():
-                        global SYSTEM_PLATFORM, NOTIFICATIONS_ENABLED, toaster
+                        global SYSTEM_PLATFORM, NOTIFICATIONS_ENABLED
 
                         if not NOTIFICATIONS_ENABLED:
                             print(f"[OK] Receipt printed! Duration: {elapsed_str}", flush=True)
@@ -1501,13 +1510,14 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
 
                         try:
                             if SYSTEM_PLATFORM == 'Windows':
-                                # Windows toast notification (tested)
-                                toaster.show_toast(
-                                    "Printer - Success",
-                                    f"Receipt printed!\nDuration: {elapsed_str}",
-                                    duration=5,
-                                    threaded=False
+                                # Windows toast notification (tested with winotify)
+                                toast = Notification(
+                                    app_id="ESC/POS Printer",
+                                    title="Printer - Success",
+                                    msg=f"Receipt printed!\nDuration: {elapsed_str}",
+                                    duration="short"
                                 )
+                                toast.show()
                             elif SYSTEM_PLATFORM == 'Darwin':
                                 # macOS notification via osascript (untested)
                                 subprocess.run([
@@ -1568,12 +1578,19 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='a', newline='') as fileDirectory:
             writer = csv.writer(fileDirectory)
             # Append a new line to the CSV file with the new ID and filename
-            writer.writerow([next_fileID, new_filename])    
+            writer.writerow([next_fileID, new_filename])
+
+        # Notify SSE listeners about the new receipt
+        receipt_updated.set()    
 
 
 app = Flask(__name__,
             template_folder=str(TEMPLATE_DIR / 'templates'),
-            static_folder=str(BASE_DIR / 'web'))
+            static_folder=str(BASE_DIR / 'web'),
+            static_url_path='/static')
+
+# Global event for notifying new receipts
+receipt_updated = threading.Event()
 
 @app.route("/")
 def accueil():
@@ -1601,6 +1618,65 @@ def list_receipts():
             return render_template('receiptList.html.j2', receiptlist=noms)
     except FileNotFoundError:
         return redirect(url_for('accueil'))
+
+@app.route("/api/receipts/latest")
+def api_latest_receipt():
+    """ API: Get the latest receipt info """
+    try:
+        with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
+            reader = csv.reader(fileDirectory)
+            noms = list()
+            for row in reader:
+                if row[0] == 'next_fileID':
+                    continue
+                noms.append({'id': row[0], 'filename': row[1]})
+
+            if len(noms) > 0:
+                latest = noms[-1]  # Last item is the latest
+                return {'id': latest['id'], 'filename': latest['filename'], 'url': f"/receipts/{latest['id']}"}
+            else:
+                return {'id': None, 'filename': None, 'url': None}
+    except FileNotFoundError:
+        return {'id': None, 'filename': None, 'url': None}
+
+@app.route("/api/receipts/count")
+def api_receipt_count():
+    """ API: Get total receipt count """
+    try:
+        with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
+            reader = csv.reader(fileDirectory)
+            count = sum(1 for row in reader if row[0] != 'next_fileID')
+            return {'count': count}
+    except FileNotFoundError:
+        return {'count': 0}
+
+@app.route("/api/receipts/stream")
+def receipt_stream():
+    """ Server-Sent Events endpoint for real-time updates """
+    def event_stream():
+        while True:
+            # Wait for receipt update event
+            receipt_updated.wait()
+            receipt_updated.clear()
+
+            # Send update event to client
+            try:
+                with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
+                    reader = csv.reader(fileDirectory)
+                    noms = list()
+                    for row in reader:
+                        if row[0] == 'next_fileID':
+                            continue
+                        noms.append({'id': row[0], 'filename': row[1]})
+
+                    if len(noms) > 0:
+                        latest = noms[-1]
+                        count = len(noms)
+                        yield f"data: {{'count': {count}, 'latest': {{'id': '{latest['id']}', 'filename': '{latest['filename']}', 'url': '/receipts/{latest['id']}'}}}}\n\n"
+            except FileNotFoundError:
+                pass
+
+    return app.response_class(event_stream(), mimetype='text/event-stream')
     
 
 @app.route("/receipts/<int:fileID>")
@@ -1620,12 +1696,48 @@ def show_receipt(fileID:int):
             # If the ID is not found, return a 404 error
             return "Not found", 404
         
-        # If the ID is found, open the html rendering of the receipt and add the footer from templates/footer.html
-        with open(BASE_DIR / 'web' / 'receipts' / filename, mode='rt') as receipt:
-            receipt_html = receipt.read()   # Read the file content
-            receipt_html = receipt_html.replace('<body>', '<body style="display: flex;flex-direction: column;min-height: 100vh;"><div id="page" style="flex-grow: 1;">')
-            receipt_html = receipt_html.replace('</body>', '</div>' + render_template('footer.html') + '</body>')  # Append the footer
-            return receipt_html
+        # If the ID is found, open the html rendering of the receipt and extract only the receipt content
+        with open(BASE_DIR / 'web' / 'receipts' / filename, mode='rt', encoding='utf-8') as receipt:
+            receipt_html = receipt.read()
+
+            # Parse HTML and extract only the esc-receipt div and styles
+            tree = html.fromstring(receipt_html)
+
+            # Get the style content
+            style_elements = tree.xpath('//style')
+            styles = '\n'.join([style.text_content() for style in style_elements if style.text_content()])
+
+            # Get the esc-receipt div
+            receipt_div = tree.xpath('//div[@class="esc-receipt"]')
+            if receipt_div:
+                receipt_content = html.tostring(receipt_div[0], encoding='unicode')
+            else:
+                receipt_content = '<div>No receipt content found</div>'
+
+            # Return minimal HTML with only receipt content
+            minimal_html = f'''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+    {styles}
+    html, body {{
+        margin: 0;
+        padding: 0;
+        background: transparent;
+    }}
+    .esc-receipt {{
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }}
+    </style>
+</head>
+<body>
+    {receipt_content}
+</body>
+</html>'''
+            return minimal_html
     
 
 @app.route("/newReceipt")
