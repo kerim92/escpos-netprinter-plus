@@ -17,7 +17,28 @@ echo.
 REM Navigate to the script directory
 cd /d "%~dp0"
 
-echo [1/3] Checking Python installation...
+echo [1/4] Checking if printer is already running...
+netstat -ano | findstr ":9100" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo WARNING: Port 9100 is already in use. Printer may be running.
+    echo.
+    choice /C YN /M "Do you want to stop the existing process and restart"
+    if errorlevel 2 (
+        echo.
+        echo Operation cancelled. Exiting...
+        pause
+        exit /b 0
+    )
+    echo.
+    echo Stopping existing Python processes...
+    taskkill /F /IM python.exe >nul 2>&1
+    timeout /t 2 /nobreak >nul
+    echo OK - Existing processes stopped
+)
+echo OK - Port 9100 is available
+echo.
+
+echo [2/4] Checking Python installation...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python is not installed or not in PATH
@@ -28,7 +49,7 @@ if errorlevel 1 (
 echo OK - Python found
 echo.
 
-echo [2/3] Checking dependencies...
+echo [3/4] Checking dependencies...
 python -c "import flask" >nul 2>&1
 if errorlevel 1 (
     echo WARNING: Flask not found. Installing dependencies...
@@ -42,7 +63,7 @@ if errorlevel 1 (
 echo OK - Dependencies ready
 echo.
 
-echo [3/3] Starting ESC/POS Network Printer...
+echo [4/4] Starting ESC/POS Network Printer...
 echo.
 echo Configuration:
 echo   - Web Interface: http://localhost:8100
