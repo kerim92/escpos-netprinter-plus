@@ -1561,7 +1561,7 @@ def accueil():
                            jetDirectPort=getenv('PRINTER_PORT', '9100'),
                             debug=getenv('FLASK_RUN_DEBUG', "false") )
 
-@app.route("/recus")
+@app.route("/receipts")
 def list_receipts():
     """ List all the receipts available """
     try:
@@ -1583,7 +1583,7 @@ def list_receipts():
         return redirect(url_for('accueil'))
     
 
-@app.route("/recus/<int:fileID>")
+@app.route("/receipts/<int:fileID>")
 def show_receipt(fileID:int):
     """ Show the receipt with the given ID """
     # Open the CSV file in read mode
