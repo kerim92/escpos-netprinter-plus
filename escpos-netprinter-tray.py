@@ -79,6 +79,31 @@ def start_server():
     print(f"  Web Interface: http://localhost:{FLASK_PORT}")
     print(f"  Printer Port: {PRINTER_PORT}")
 
+    # Check if running as PyInstaller bundle
+    if getattr(sys, 'frozen', False):
+        # Running as EXE - use thread instead of subprocess
+        print("Running in EXE mode - starting server in thread")
+        import threading
+
+        def run_server_thread():
+            # Set environment variables for this process
+            os.environ['FLASK_RUN_HOST'] = FLASK_HOST
+            os.environ['FLASK_RUN_PORT'] = FLASK_PORT
+            os.environ['PRINTER_PORT'] = PRINTER_PORT
+            os.environ['ESCPOS_DEBUG'] = 'False'
+
+            # Import and run the server module directly
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("escpos_server", server_script)
+            server_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(server_module)
+
+        server_thread = threading.Thread(target=run_server_thread, daemon=True)
+        server_thread.start()
+        print("Server started in thread mode!")
+        print("System tray icon is running. Right-click for options.")
+        return
+
     # Check if server script exists
     if not server_script.exists():
         print(f"ERROR: Server script not found: {server_script}")
@@ -86,7 +111,7 @@ def start_server():
         return
 
     try:
-        # Start the server process
+        # Start the server process (normal Python mode)
         if platform.system() == 'Windows':
             # On Windows, keep it simple - just use python.exe
             server_process = subprocess.Popen(
