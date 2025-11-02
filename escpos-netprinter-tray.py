@@ -17,12 +17,12 @@ try:
     from pystray import Icon, Menu, MenuItem
     from PIL import Image, ImageDraw
     TRAY_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     TRAY_AVAILABLE = False
-    print("ERROR: pystray or Pillow not installed.")
-    print("Please install: pip install pystray Pillow")
-    print("\nFalling back to regular mode...")
-    sys.exit(1)
+    print(f"WARNING: System tray not available: {e}")
+    print("Install with: pip install pystray Pillow")
+    print("\nStarting in console mode instead...")
+    # Don't exit, fallback to console mode
 
 # Get environment variables
 FLASK_HOST = os.getenv('FLASK_RUN_HOST', '0.0.0.0')
@@ -159,9 +159,9 @@ def setup_tray():
     # Create icon
     icon_image = create_icon_image()
     icon = Icon(
-        'ESC/POS Printer',
+        'escpos-netprinter-plus',
         icon_image,
-        'ESC/POS Network Printer\nRunning on port ' + PRINTER_PORT,
+        f'ESC/POS Network Printer Plus\nPrinter Port: {PRINTER_PORT} | Web: {FLASK_PORT}\nRight-click for options',
         menu
     )
 
@@ -180,9 +180,21 @@ def main():
     print()
 
     if not TRAY_AVAILABLE:
-        print("ERROR: System tray support not available")
-        print("Please install: pip install pystray Pillow")
-        return 1
+        print("WARNING: System tray not available - starting in console mode")
+        print()
+        # Start server in console mode
+        start_server()
+        print()
+        print("Server is running. Press Ctrl+C to stop.")
+        try:
+            # Keep running until interrupted
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nInterrupted by user")
+            stop_server()
+        return 0
 
     try:
         setup_tray()
