@@ -246,10 +246,10 @@ def check_single_instance():
         MB_ICONINFORMATION = 0x40
         IDYES = 6
 
-        # Ask user if they want to restart
+        # Ask user if they want to close existing instance
         result = ctypes.windll.user32.MessageBoxW(
             0,
-            "ESC/POS Network Printer is already running!\n\nDo you want to restart it?",
+            "ESC/POS Network Printer is already running!\n\nDo you want to close the existing instance and start a new one?",
             "Already Running",
             MB_YESNO | MB_ICONQUESTION
         )
