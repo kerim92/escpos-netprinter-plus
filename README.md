@@ -27,11 +27,14 @@ Perfect for development, testing, and production environments where you need to 
 ### New Features (Plus Version)
 - ✨ **Native Desktop Notifications**: Platform-specific notifications when printing completes (Windows toast, macOS/Linux console)
 - ⏱️ **Print Duration Tracking**: Shows exact time taken for each print job
+- 🔄 **Real-time Receipt Preview**: Vue.js 3 powered live updates via Server-Sent Events (SSE)
+- 🖼️ **Visual Receipt Display**: Interactive printer visualization with live receipt preview overlay
 - 🌍 **Multi-language Support**: Notifications in English (easily customizable to other languages)
 - 🔧 **Cross-platform Filename Fix**: Fixed datetime format to avoid illegal characters in filenames
 - 🔌 **External System Integration**: Easy integration with any inventory or POS system
-- 📊 **Real-time Status Updates**: Live feedback on print operations
+- 📊 **Real-time Status Updates**: Live feedback on print operations without page refresh
 - 🖥️ **Platform Detection**: Automatically adapts to Windows, macOS, or Linux
+- 📦 **Portable PHP**: Embedded PHP runtime for standalone EXE deployment
 
 ## 📋 Table of Contents
 
@@ -465,8 +468,13 @@ Contributions are welcome! Please follow these guidelines:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+### Frontend Notice
+
+**Note from the author**: I'm not a frontend expert - I did my best to create a visually appealing receipt display interface using Vue.js 3 and CSS. If you're experienced with frontend development and would like to improve the UI/UX, animations, or visual design, I would greatly appreciate your contributions! The receipt preview visualization (templates/accueil.html.j2) is especially open to improvements.
+
 ### Areas for Contribution
 
+- [ ] **Frontend/UI Improvements** - Better animations, responsive design, modern UI frameworks
 - [ ] Multi-language support (extend beyond Turkish)
 - [ ] Customizable notification sounds
 - [ ] PDF export of receipts
@@ -474,7 +482,7 @@ Contributions are welcome! Please follow these guidelines:
 - [ ] SQLite database for receipt storage
 - [ ] Windows Service installer
 - [ ] GUI configuration tool
-- [ ] macOS/Linux support
+- [ ] macOS/Linux native notifications testing
 
 ## 📜 Credits
 
