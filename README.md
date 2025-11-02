@@ -11,6 +11,8 @@
 
 Perfect for development, testing, and production environments where you need to capture and view thermal printer output without physical hardware. No Docker required - runs natively on all platforms.
 
+**Note:** Docker configuration files are still included in the repository for users who prefer containerized deployment. However, the native installation is now the recommended approach for better performance and easier system integration.
+
 **Key Features:** ✨ Toast Notifications • ⏱️ Duration Tracking • 🌍 Cross-platform Support • 🔌 Easy Integration
 
 ![ESC/POS Network Printer](https://github.com/gilbertfl/escpos-netprinter/assets/83510612/8aefc8c5-01ab-45f3-a992-e2850bef70f6)
