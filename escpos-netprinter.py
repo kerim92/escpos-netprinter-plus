@@ -1,11 +1,12 @@
 import os
+import sys
 from flask import Flask, redirect, render_template, request, url_for
 from os import getenv
 from io import BufferedWriter
 import csv
 import subprocess
 from subprocess import CompletedProcess
-from pathlib import PurePath
+from pathlib import PurePath, Path
 from lxml import html, etree
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -13,6 +14,21 @@ import time
 import platform
 import threading
 import socketserver
+
+# Determine base directory for file paths
+# When running as PyInstaller EXE, use the temp extraction directory for templates
+# but use current working directory for writable files (receipts, tmp, logs)
+if getattr(sys, 'frozen', False):
+    # Running as EXE - templates from PyInstaller temp, data from CWD
+    TEMPLATE_DIR = Path(sys._MEIPASS)
+    BASE_DIR = Path.cwd()  # Current working directory for writable files
+    # Create web/receipts and web/tmp directories if they don't exist
+    (BASE_DIR / 'web' / 'receipts').mkdir(parents=True, exist_ok=True)
+    (BASE_DIR / 'web' / 'tmp').mkdir(parents=True, exist_ok=True)
+else:
+    # Running as Python script - use script directory for everything
+    BASE_DIR = Path(__file__).parent
+    TEMPLATE_DIR = BASE_DIR
 
 # Platform detection and notification setup
 SYSTEM_PLATFORM = platform.system()
@@ -63,7 +79,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         self.start_time = time.time()  # Baslangic zamani
         print (f"Address connected: {self.client_address}", flush=True)
         self.netprinter_debugmode = getenv('ESCPOS_DEBUG', "false")
-        bin_filename = PurePath('web', 'tmp', "reception.bin")
+        bin_filename = BASE_DIR / 'web' / 'tmp' / "reception.bin")
         with open(bin_filename, "wb") as binfile:
 
             #Read everything until we get EOF, and keep everything in a receive buffer
@@ -1434,7 +1450,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         except subprocess.CalledProcessError as err:
             print(f"Error while converting receipt: {err.returncode}")
             # append the error output to the log file
-            with open(PurePath('web','tmp', 'esc2html_log'), mode='at') as log:
+            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='at') as log:
                 log.write(f"Error while converting a JetDirect print: {err.returncode}")
                 log.write(datetime.now(tz=ZoneInfo("Canada/Eastern")).strftime('%Y%b%d %X.%f %Z'))
                 log.write(err.stderr)
@@ -1446,7 +1462,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         else:
             #Si la conversion s'est bien passée, on devrait avoir le HTML
             print (f"Receipt decoded", flush=True)
-            with open(PurePath('web','tmp', 'esc2html_log'), mode='at') as log:
+            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='at') as log:
                 log.write("Successful JetDirect print\n")
                 log.write(datetime.now(tz=ZoneInfo("Canada/Eastern")).strftime('%Y%b%d %X.%f %Z\n\n'))
                 log.write(recu.stderr)
@@ -1462,7 +1478,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
             try:
                 #Créer un nouveau fichier avec le nom du reçu
                 html_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%H%M%S.%f%Z'))
-                with open(PurePath('web', 'receipts', html_filename), mode='wt') as nouveauRecu:
+                with open(BASE_DIR / 'web' / 'receipts' / html_filename), mode='wt') as nouveauRecu:
                     #Écrire le reçu dans le fichier.
                     nouveauRecu.write(recuConvert)
                     nouveauRecu.close()
@@ -1532,14 +1548,14 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         # Add an entry in the reference file with the new filename and an unique ID.
         # Open the CSV file in read mode to count the existing rows
         try:
-            with open(PurePath('web', 'receipt_list.csv'), mode='r') as fileDirectory:
+            with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
                 reader = csv.reader(fileDirectory)
                 # Count the number of rows, starting from 1 (to include the header)
                 next_fileID = sum(1 for row in reader) + 1
                 fileDirectory.close()
         except FileNotFoundError:
             # Create the CSV file with the headers
-            with open(PurePath('web', 'receipt_list.csv'), mode='w', newline='') as fileDirectory:
+            with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='w', newline='') as fileDirectory:
                 writer = csv.writer(fileDirectory)
                 writer.writerow(['next_fileID', 'filename'])
                 fileDirectory.close()
@@ -1547,13 +1563,15 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         # Now, id holds the next sequential ID
 
         # Open the CSV file in append mode to add a new row
-        with open(PurePath('web', 'receipt_list.csv'), mode='a', newline='') as fileDirectory:
+        with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='a', newline='') as fileDirectory:
             writer = csv.writer(fileDirectory)
             # Append a new line to the CSV file with the new ID and filename
             writer.writerow([next_fileID, new_filename])    
                
 
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder=str(TEMPLATE_DIR / 'templates'),
+            static_folder=str(BASE_DIR / 'web'))
 
 @app.route("/")
 def accueil():
@@ -1565,7 +1583,7 @@ def accueil():
 def list_receipts():
     """ List all the receipts available """
     try:
-        with open(PurePath('web', 'receipt_list.csv'), mode='r') as fileDirectory:
+        with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
             # Skip the header and get all the filenames in a list
             reader = csv.reader(fileDirectory)
             noms = list()
@@ -1587,7 +1605,7 @@ def list_receipts():
 def show_receipt(fileID:int):
     """ Show the receipt with the given ID """
     # Open the CSV file in read mode
-    with open(PurePath('web', 'receipt_list.csv'), mode='r') as fileDirectory:
+    with open(BASE_DIR / 'web' / 'receipt_list.csv', mode='r') as fileDirectory:
         reader = csv.reader(fileDirectory)
         # Find the row with the given ID
         for row in reader:
@@ -1601,7 +1619,7 @@ def show_receipt(fileID:int):
             return "Not found", 404
         
         # If the ID is found, open the html rendering of the receipt and add the footer from templates/footer.html
-        with open(PurePath('web', 'receipts', filename), mode='rt') as receipt:
+        with open(BASE_DIR / 'web' / 'receipts' / filename), mode='rt') as receipt:
             receipt_html = receipt.read()   # Read the file content
             receipt_html = receipt_html.replace('<body>', '<body style="display: flex;flex-direction: column;min-height: 100vh;"><div id="page" style="flex-grow: 1;">')
             receipt_html = receipt_html.replace('</body>', '</div>' + render_template('footer.html') + '</body>')  # Append the footer
@@ -1624,7 +1642,7 @@ def publish_receipt_from_CUPS():
     new_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%X.%f%Z'))
 
     # Create the full destination path with the new filename
-    destination_file = PurePath('web', 'receipts', new_filename)
+    destination_file = BASE_DIR / 'web' / 'receipts' / new_filename)
 
     # Read the source file, add the title and write it in the destination file
     with open(source_file, mode='rt') as receipt:
@@ -1640,7 +1658,7 @@ def publish_receipt_from_CUPS():
     #Load the log file from /var/spool/cups/tmp/ and append it in web/tmp/esc2html_log
     logfile_filename = os.environ['LOG_FILENAME']
     # print(logfile_filename)
-    log = open(PurePath('web','tmp', 'esc2html_log'), mode='a')
+    log = open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='a')
     source_log = open(source_dir.joinpath(logfile_filename), mode='rt')
     log.write(f"CUPS print received at {datetime.now(tz=ZoneInfo('Canada/Eastern')).strftime('%Y%b%d %X.%f %Z')}\n")
     log.write(source_log.read())

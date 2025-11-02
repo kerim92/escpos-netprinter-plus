@@ -57,6 +57,11 @@ python -m PyInstaller ^
     --hidden-import=PIL ^
     --hidden-import=flask ^
     --hidden-import=lxml ^
+    --hidden-import=zoneinfo ^
+    --hidden-import=socketserver ^
+    --hidden-import=csv ^
+    --hidden-import=subprocess ^
+    --hidden-import=datetime ^
     escpos-netprinter-tray.py
 
 if errorlevel 1 (
