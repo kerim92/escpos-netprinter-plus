@@ -9,9 +9,35 @@ from pathlib import PurePath
 from lxml import html, etree
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-import threading 
+import time
+import platform
+import threading
 import socketserver
+
+# Platform detection and notification setup
+SYSTEM_PLATFORM = platform.system()
+NOTIFICATIONS_ENABLED = False
+toaster = None
+
+if SYSTEM_PLATFORM == 'Windows':
+    try:
+        from win10toast import ToastNotifier
+        toaster = ToastNotifier()
+        NOTIFICATIONS_ENABLED = True
+        print(f"✅ Platform: Windows - Toast notifications enabled (tested)")
+    except ImportError:
+        print("⚠️  win10toast not installed - notifications disabled")
+        print("   Install: pip install win10toast")
+elif SYSTEM_PLATFORM == 'Darwin':  # macOS
+    # macOS notification support (untested)
+    NOTIFICATIONS_ENABLED = True
+    print(f"✅ Platform: macOS - Desktop notifications enabled (untested)")
+elif SYSTEM_PLATFORM == 'Linux':
+    # Linux notification support (untested)
+    NOTIFICATIONS_ENABLED = True
+    print(f"✅ Platform: Linux - Desktop notifications enabled (untested)")
+else:
+    print(f"⚠️  Platform: {SYSTEM_PLATFORM} - Notifications not supported")
 
 
 #Network ESC/pos printer server
@@ -34,6 +60,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
     
     # Receive the print data and dump it in a file.
     def handle(self):
+        self.start_time = time.time()  # Baslangic zamani
         print (f"Address connected: {self.client_address}", flush=True)
         self.netprinter_debugmode = getenv('ESCPOS_DEBUG', "false")
         bin_filename = PurePath('web', 'tmp', "reception.bin")
@@ -1434,13 +1461,56 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
 
             try:
                 #Créer un nouveau fichier avec le nom du reçu
-                html_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%X.%f%Z'))
+                html_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%H%M%S.%f%Z'))
                 with open(PurePath('web', 'receipts', html_filename), mode='wt') as nouveauRecu:
                     #Écrire le reçu dans le fichier.
                     nouveauRecu.write(recuConvert)
                     nouveauRecu.close()
                     #Ajouter le reçu à la liste des reçus
                     self.add_receipt_to_directory(html_filename)
+
+                    # Calculate print duration and show notification
+                    elapsed_time = time.time() - self.start_time
+                    elapsed_str = f"{elapsed_time:.2f} seconds"
+
+                    # Platform-specific notification (thread'de calistir - blocking olmasin)
+                    def show_notification():
+                        global SYSTEM_PLATFORM, NOTIFICATIONS_ENABLED, toaster
+
+                        if not NOTIFICATIONS_ENABLED:
+                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+                            return
+
+                        try:
+                            if SYSTEM_PLATFORM == 'Windows':
+                                # Windows toast notification (tested)
+                                toaster.show_toast(
+                                    "Printer - Success",
+                                    f"Receipt printed!\nDuration: {elapsed_str}",
+                                    duration=5,
+                                    threaded=False
+                                )
+                            elif SYSTEM_PLATFORM == 'Darwin':
+                                # macOS notification via osascript (untested)
+                                subprocess.run([
+                                    'osascript', '-e',
+                                    f'display notification "Receipt printed! Duration: {elapsed_str}" with title "Printer - Success"'
+                                ], check=False)
+                            elif SYSTEM_PLATFORM == 'Linux':
+                                # Linux notification via notify-send (untested)
+                                subprocess.run([
+                                    'notify-send',
+                                    'Printer - Success',
+                                    f'Receipt printed!\nDuration: {elapsed_str}'
+                                ], check=False)
+
+                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+                        except Exception as e:
+                            print(f"⚠️  Notification error: {e}", flush=True)
+                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+
+                    notification_thread = threading.Thread(target=show_notification)
+                    notification_thread.start()
 
             except OSError as err:
                 print("File creation error:", err.errno, flush=True)

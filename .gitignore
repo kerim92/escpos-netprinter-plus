@@ -1,28 +1,73 @@
-# OSX
-.DS_Store
+# ESC/POS Network Printer - Windows
+# Author: Kerim Şentürk
 
-# Eclipse files
-.settings/*
-.project
-.buildpath
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+ENV/
+env/
 
-# doxygen files
-doc/html
-doc/latex
-doc/doxygen_sqlite3.db
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# composer files
+# PHP / Composer
 vendor/
-
-# other build files
-build/*
-/__pycache__/**
-*.phar
 composer.lock
-cups/*.tar.gz
+*.phar
 
-# Test and runtime-generated files
+# Application specific
 web/receipts/*.html
-web/tmp/reception.bin
+web/tmp/*
+!web/receipts/.gitkeep
+!web/tmp/.gitkeep
+
+# Logs
+*.log
+logs/
 web/receipt_list.csv
-web/tmp/*_log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.old
+*~
+
+# Test files
+test_output/
+*.test
+
+# Environment
+.env
+.env.local
+
+# Cache
+.cache/
+*.cache

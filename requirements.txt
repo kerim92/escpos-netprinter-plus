@@ -1,0 +1,25 @@
+# Python Dependencies for ESC/POS Network Printer Plus
+# Author: Kerim Şentürk
+# Based on: gilbertfl/escpos-netprinter
+# Cross-platform support: Windows, macOS, Linux
+
+# Core Dependencies (All Platforms)
+Flask>=2.3.0
+lxml>=4.9.0
+
+# Platform-Specific Dependencies
+# Install based on your platform:
+
+# Windows only (TESTED ✅)
+# Install with: pip install win10toast
+win10toast>=0.9; sys_platform == 'win32'
+
+# macOS (UNTESTED ⚠️ - Community testing welcome!)
+# macOS uses built-in osascript, no extra package needed
+
+# Linux (UNTESTED ⚠️ - Community testing welcome!)
+# Requires system package: sudo apt-get install libnotify-bin
+# No Python package needed, uses notify-send command
+
+# Optional: Production server (not required for development)
+# gunicorn>=20.1.0  # Unix-based systems only
