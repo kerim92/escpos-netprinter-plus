@@ -1,4 +1,4 @@
-# Contributing to ESC/POS Network Printer for Windows
+# Contributing to ESC/POS Network Printer Plus
 
 First off, thank you for considering contributing to this project! 🎉
 
@@ -33,7 +33,7 @@ Before creating bug reports, please check existing issues. When creating a bug r
 
 **Steps to reproduce**:
 1. Start escpos-netprinter.py
-2. Send test print via SmartStock
+2. Send test print to the printer
 3. Check for notification
 
 **Expected**: Toast notification appears
@@ -55,8 +55,8 @@ Enhancement suggestions are welcome! Include:
 
 1. **Fork & Clone**
 ```bash
-git clone https://github.com/YOUR_USERNAME/escpos-netprinter-windows.git
-cd escpos-netprinter-windows
+git clone https://github.com/YOUR_USERNAME/escpos-netprinter-plus.git
+cd escpos-netprinter-plus
 ```
 
 2. **Create a Branch**
@@ -76,7 +76,9 @@ git checkout -b fix/annoying-bug
 # Test basic functionality
 python escpos-netprinter.py
 
-# Test with SmartStock integration
+# Test with system tray mode
+python escpos-netprinter-tray.py
+
 # Send test prints and verify notifications
 ```
 
@@ -130,17 +132,21 @@ composer install
 ### Project Structure
 ```
 escpos-netprinter/
-├── escpos-netprinter.py    # Main Python server
-├── src/                     # PHP ESC/POS processing
-│   └── Escpos2Html.php
-├── web/                     # Web interface
-│   ├── receipts/            # Generated HTML receipts
-│   └── tmp/                 # Temporary files
-├── vendor/                  # PHP dependencies (composer)
-├── requirements.txt         # Python dependencies
-├── composer.json           # PHP dependencies
-├── README.md               # Documentation
-└── LICENSE                 # MIT License
+├── escpos-netprinter.py       # Main Python server (terminal mode)
+├── escpos-netprinter-tray.py  # System tray version
+├── esc2html.php               # ESC/POS to HTML conversion
+├── templates/                 # Jinja2 templates
+│   └── accueil.html.j2        # Vue.js homepage template
+├── web/                       # Web interface
+│   ├── receipts/              # Generated HTML receipts
+│   └── tmp/                   # Temporary files
+├── src/                       # PHP source files
+├── vendor/                    # PHP dependencies (composer)
+├── requirements.txt           # Python dependencies
+├── composer.json              # PHP dependencies
+├── README.md                  # Main documentation
+├── networkprinter.md          # Detailed setup guide
+└── LICENSE                    # MIT License
 ```
 
 ### Running Tests
@@ -148,14 +154,14 @@ escpos-netprinter/
 **Basic Connectivity Test**:
 ```bash
 netstat -an | findstr :9100
-netstat -an | findstr :5000
+netstat -an | findstr :8100
 ```
 
 **Print Test**:
 ```bash
 telnet localhost 9100
 # Type some text, then Ctrl+], type 'quit'
-# Check http://localhost:5000/recus
+# Check http://localhost:8100/receipts
 ```
 
 **Notification Test**:
@@ -184,13 +190,13 @@ def show_notification(elapsed_time):
     Args:
         elapsed_time (float): Time taken for print job in seconds
     """
-    elapsed_str = f"{elapsed_time:.2f} saniye"
+    elapsed_str = f"{elapsed_time:.2f} seconds"
 
     # Use threading to avoid blocking the main process
     def _show():
         toaster.show_toast(
-            "Yazici - Basarili",
-            f"Fis yazdirildi!\nSure: {elapsed_str}",
+            "Printer - Success",
+            f"Receipt printed!\nDuration: {elapsed_str}",
             duration=5,
             threaded=False
         )
@@ -219,7 +225,13 @@ Follow PSR-12 with these specifics:
 We especially welcome contributions in these areas:
 
 ### High Priority
-- [ ] **macOS/Linux support** - Adapt for non-Windows systems
+- [ ] **Frontend/UI improvements** - Improve Vue.js interface (templates/accueil.html.j2)
+  - Better animations and transitions
+  - Modern CSS frameworks (Tailwind, Bootstrap)
+  - Responsive design for mobile devices
+  - Dark mode support
+  - Improved receipt preview styling
+- [ ] **macOS/Linux support** - Test and adapt for non-Windows systems
 - [ ] **GUI configuration tool** - Electron or Qt-based settings app
 - [ ] **Automated tests** - Unit tests for core functionality
 - [ ] **Multi-language support** - i18n for notifications and web interface
@@ -229,6 +241,7 @@ We especially welcome contributions in these areas:
 - [ ] **Email receipts** - Send receipts via email
 - [ ] **Database storage** - SQLite for receipt history
 - [ ] **Performance optimization** - Faster ESC/POS processing
+- [ ] **Real-time WebSocket updates** - Replace SSE with WebSockets for better performance
 
 ### Low Priority (Nice to Have)
 - [ ] **Custom notification sounds** - User-selectable sounds
