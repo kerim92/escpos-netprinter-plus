@@ -15,21 +15,6 @@ import platform
 import threading
 import socketserver
 
-# Determine base directory for file paths
-# When running as PyInstaller EXE, use the temp extraction directory for templates
-# but use current working directory for writable files (receipts, tmp, logs)
-if getattr(sys, 'frozen', False):
-    # Running as EXE - templates from PyInstaller temp, data from CWD
-    TEMPLATE_DIR = Path(sys._MEIPASS)
-    BASE_DIR = Path.cwd()  # Current working directory for writable files
-    # Create web/receipts and web/tmp directories if they don't exist
-    (BASE_DIR / 'web' / 'receipts').mkdir(parents=True, exist_ok=True)
-    (BASE_DIR / 'web' / 'tmp').mkdir(parents=True, exist_ok=True)
-else:
-    # Running as Python script - use script directory for everything
-    BASE_DIR = Path(__file__).parent
-    TEMPLATE_DIR = BASE_DIR
-
 # Platform detection and notification setup
 SYSTEM_PLATFORM = platform.system()
 NOTIFICATIONS_ENABLED = False
@@ -55,6 +40,23 @@ elif SYSTEM_PLATFORM == 'Linux':
 else:
     print(f"[WARNING] Platform: {SYSTEM_PLATFORM} - Notifications not supported")
 
+# Determine base directory for file paths
+# When running as PyInstaller EXE, use the temp extraction directory for templates
+# but use current working directory for writable files (receipts, tmp, logs)
+if getattr(sys, 'frozen', False):
+    # Running as EXE - templates from PyInstaller temp, data from CWD
+    TEMPLATE_DIR = Path(sys._MEIPASS)
+    BASE_DIR = Path.cwd()  # Current working directory for writable files
+    print(f"[EXE Mode] Templates: {TEMPLATE_DIR}, Data: {BASE_DIR}")
+    # Create web/receipts and web/tmp directories if they don't exist
+    (BASE_DIR / 'web' / 'receipts').mkdir(parents=True, exist_ok=True)
+    (BASE_DIR / 'web' / 'tmp').mkdir(parents=True, exist_ok=True)
+else:
+    # Running as Python script - use script directory for everything
+    BASE_DIR = Path(__file__).parent
+    TEMPLATE_DIR = BASE_DIR
+    print(f"[Script Mode] Base directory: {BASE_DIR}")
+
 
 #Network ESC/pos printer server
 class ESCPOSServer(socketserver.TCPServer):
@@ -79,7 +81,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         self.start_time = time.time()  # Baslangic zamani
         print (f"Address connected: {self.client_address}", flush=True)
         self.netprinter_debugmode = getenv('ESCPOS_DEBUG', "false")
-        bin_filename = BASE_DIR / 'web' / 'tmp' / "reception.bin")
+        bin_filename = BASE_DIR / 'web' / 'tmp' / "reception.bin"
         with open(bin_filename, "wb") as binfile:
 
             #Read everything until we get EOF, and keep everything in a receive buffer
@@ -1450,7 +1452,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         except subprocess.CalledProcessError as err:
             print(f"Error while converting receipt: {err.returncode}")
             # append the error output to the log file
-            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='at') as log:
+            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log', mode='at') as log:
                 log.write(f"Error while converting a JetDirect print: {err.returncode}")
                 log.write(datetime.now(tz=ZoneInfo("Canada/Eastern")).strftime('%Y%b%d %X.%f %Z'))
                 log.write(err.stderr)
@@ -1462,7 +1464,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
         else:
             #Si la conversion s'est bien passée, on devrait avoir le HTML
             print (f"Receipt decoded", flush=True)
-            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='at') as log:
+            with open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log', mode='at') as log:
                 log.write("Successful JetDirect print\n")
                 log.write(datetime.now(tz=ZoneInfo("Canada/Eastern")).strftime('%Y%b%d %X.%f %Z\n\n'))
                 log.write(recu.stderr)
@@ -1478,7 +1480,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
             try:
                 #Créer un nouveau fichier avec le nom du reçu
                 html_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%H%M%S.%f%Z'))
-                with open(BASE_DIR / 'web' / 'receipts' / html_filename), mode='wt') as nouveauRecu:
+                with open(BASE_DIR / 'web' / 'receipts' / html_filename, mode='wt') as nouveauRecu:
                     #Écrire le reçu dans le fichier.
                     nouveauRecu.write(recuConvert)
                     nouveauRecu.close()
@@ -1567,7 +1569,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
             writer = csv.writer(fileDirectory)
             # Append a new line to the CSV file with the new ID and filename
             writer.writerow([next_fileID, new_filename])    
-               
+
 
 app = Flask(__name__,
             template_folder=str(TEMPLATE_DIR / 'templates'),
@@ -1619,7 +1621,7 @@ def show_receipt(fileID:int):
             return "Not found", 404
         
         # If the ID is found, open the html rendering of the receipt and add the footer from templates/footer.html
-        with open(BASE_DIR / 'web' / 'receipts' / filename), mode='rt') as receipt:
+        with open(BASE_DIR / 'web' / 'receipts' / filename, mode='rt') as receipt:
             receipt_html = receipt.read()   # Read the file content
             receipt_html = receipt_html.replace('<body>', '<body style="display: flex;flex-direction: column;min-height: 100vh;"><div id="page" style="flex-grow: 1;">')
             receipt_html = receipt_html.replace('</body>', '</div>' + render_template('footer.html') + '</body>')  # Append the footer
@@ -1642,7 +1644,7 @@ def publish_receipt_from_CUPS():
     new_filename = 'receipt{}.html'.format(heureRecept.strftime('%Y%b%d_%X.%f%Z'))
 
     # Create the full destination path with the new filename
-    destination_file = BASE_DIR / 'web' / 'receipts' / new_filename)
+    destination_file = BASE_DIR / 'web' / 'receipts' / new_filename
 
     # Read the source file, add the title and write it in the destination file
     with open(source_file, mode='rt') as receipt:
@@ -1658,7 +1660,7 @@ def publish_receipt_from_CUPS():
     #Load the log file from /var/spool/cups/tmp/ and append it in web/tmp/esc2html_log
     logfile_filename = os.environ['LOG_FILENAME']
     # print(logfile_filename)
-    log = open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log'), mode='a')
+    log = open(BASE_DIR / 'web' / 'tmp' / 'esc2html_log', mode='a')
     source_log = open(source_dir.joinpath(logfile_filename), mode='rt')
     log.write(f"CUPS print received at {datetime.now(tz=ZoneInfo('Canada/Eastern')).strftime('%Y%b%d %X.%f %Z')}\n")
     log.write(source_log.read())
