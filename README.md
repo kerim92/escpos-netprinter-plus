@@ -173,9 +173,33 @@ lpadmin -p "ESCPOS-Network-Printer" -v socket://127.0.0.1:9100 -E
 
 ## 🚀 Quick Start
 
-### System Tray Mode (Recommended for Windows)
+### Option 1: Standalone EXE (No Python Required) ⭐
 
-Run with system tray icon (no terminal window):
+**For users who don't have Python installed:**
+
+1. Build the EXE (one-time only):
+```bash
+# Double-click build-exe.bat
+# Or run manually:
+build-exe.bat
+```
+
+2. Run the generated EXE:
+```bash
+# Located in dist/ folder after build
+dist\ESC-POS-Printer.exe
+```
+
+This will:
+- Run with system tray icon (no terminal window)
+- No Python installation required (~37MB standalone executable)
+- Right-click the tray icon for: Open Web Interface, View Receipts, Exit
+
+**Note**: The EXE build process takes 2-3 minutes and requires Python + PyInstaller. After building once, you can distribute the EXE to any Windows PC without Python.
+
+### Option 2: System Tray Mode with Python
+
+Run with system tray icon (requires Python):
 
 ```bash
 cd C:\path\to\escpos-netprinter
