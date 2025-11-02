@@ -507,6 +507,7 @@ This is a fork of [escpos-netprinter](https://github.com/gilbertfl/escpos-netpri
 - **Mike Connelly (mike42)** - For the excellent escpos-php library
 - **SmartStock Team** - For integration testing and feedback
 - **ESC/POS Community** - For documentation and support
+- **Claude Code** - Claude helped me a lot, thanks to [Claude Code](https://claude.com/claude-code) for helping me build this project
 
 ## 📝 License
 
