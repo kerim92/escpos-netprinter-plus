@@ -138,14 +138,9 @@ sudo apt-get install cups cups-client  # Debian/Ubuntu
 sudo yum install cups  # RHEL/CentOS
 ```
 
-### Step 4: Create Required Directories
+### Step 4: Setup Printer
 
-```bash
-mkdir web\receipts
-mkdir web\tmp
-```
-
-### Step 5: Setup Printer
+**Note:** The required directories (`web/receipts` and `web/tmp`) are already included in the repository via `.gitkeep` files.
 
 #### Windows
 
