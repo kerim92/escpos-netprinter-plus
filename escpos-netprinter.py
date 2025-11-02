@@ -1680,8 +1680,8 @@ def launchPrintServer(printServ:ESCPOSServer):
     printServ.serve_forever()
 
 
-if __name__ == "__main__":
-
+def main():
+    """Main entry point for the ESC/POS server"""
     #Obtenir les variables d'environnement
     host = getenv('FLASK_RUN_HOST', '0.0.0.0')  #By default, listen to all source addresses
     port = getenv('FLASK_RUN_PORT', '5000')
@@ -1695,11 +1695,15 @@ if __name__ == "__main__":
         t = threading.Thread(target=launchPrintServer, args=[printServer])
         t.daemon = True
         t.start()
-    
+
         #Lancer l'application Flask
-        if flask_debugmode == 'True': 
+        if flask_debugmode == 'True':
             startDebug:bool = True
         else:
             startDebug:bool = False
 
         app.run(host=host, port=int(port), debug=startDebug, use_reloader=False) #On empêche le reloader parce qu'il repart "main" au complet et le service d'imprimante n'est pas conçue pour ça.
+
+
+if __name__ == "__main__":
+    main()

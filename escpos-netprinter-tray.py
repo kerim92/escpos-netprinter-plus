@@ -111,7 +111,11 @@ def start_server():
 
                 server_module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(server_module)
-                print("Thread: Server module loaded and executed successfully")
+                print("Thread: Server module loaded successfully")
+
+                # Call the main() function to start the server
+                print("Thread: Starting server via main() function")
+                server_module.main()
 
             except Exception as e:
                 print(f"ERROR in server thread: {e}")
