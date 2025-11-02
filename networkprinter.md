@@ -1,112 +1,116 @@
-# ESC/POS Network Printer - Kurulum ve Kullanım Kılavuzu
+# ESC/POS Network Printer - Setup and Usage Guide
 
-Bu dokümantasyon, SmartStock için ESC/POS Network Printer sisteminin kurulumu ve kullanımı hakkında detaylı bilgi içerir.
+This documentation provides detailed information about the installation and usage of the ESC/POS Network Printer system.
 
-## İçindekiler
+## Table of Contents
 
-1. [Sistem Hakkında](#sistem-hakkında)
-2. [Ön Gereksinimler](#ön-gereksinimler)
-3. [Kurulum Adımları](#kurulum-adımları)
-4. [Başlatma](#başlatma)
-5. [SmartStock Entegrasyonu](#smartstock-entegrasyonu)
-6. [Web Arayüzü](#web-arayüzü)
-7. [Ortam Değişkenleri](#ortam-değişkenleri)
-8. [Sorun Giderme](#sorun-giderme)
-9. [Port Bilgileri](#port-bilgileri)
-
----
-
-## Sistem Hakkında
-
-ESC/POS Network Printer, termal yazıcı komutlarını (ESC/POS) alıp HTML formatına dönüştüren ve web arayüzünde görüntüleyen bir sistemdir. Docker kullanmadan, doğrudan Windows üzerinde çalışır.
-
-### Özellikler
-
-- **ESC/POS Desteği**: Standart termal yazıcı komutlarını işler
-- **HTML Dönüştürme**: Fişleri tarayıcıda görüntülenebilir HTML'e çevirir
-- **JetDirect Protokolü**: Port 9100 üzerinden yazıcı iletişimi
-- **Web Arayüzü**: Tüm yazdırılan fişleri görüntüleme
-- **Windows Bildirimleri**: Yazdırma tamamlandığında bildirim gösterir
-- **Süre Ölçümü**: Her yazdırma işleminin ne kadar sürdüğünü gösterir
+1. [About the System](#about-the-system)
+2. [Prerequisites](#prerequisites)
+3. [Installation Steps](#installation-steps)
+4. [Starting the Application](#starting-the-application)
+5. [Web Interface](#web-interface)
+6. [Environment Variables](#environment-variables)
+7. [Troubleshooting](#troubleshooting)
+8. [Port Information](#port-information)
 
 ---
 
-## Ön Gereksinimler
+## About the System
 
-### 1. Python Kurulumu
+ESC/POS Network Printer is a system that receives thermal printer commands (ESC/POS), converts them to HTML format, and displays them in a web interface. It runs directly on Windows without Docker.
 
-**Gerekli Versiyon**: Python 3.8 veya üstü
+### Features
 
-**İndirme**:
+- **ESC/POS Support**: Processes standard thermal printer commands
+- **HTML Conversion**: Converts receipts to browser-viewable HTML
+- **JetDirect Protocol**: Printer communication over port 9100
+- **Web Interface**: View all printed receipts
+- **Windows Notifications**: Shows notifications when printing completes
+- **Duration Measurement**: Displays how long each print job takes
+- **Real-time Updates**: Vue.js powered live receipt preview via Server-Sent Events
+
+---
+
+## Prerequisites
+
+### 1. Python Installation
+
+**Required Version**: Python 3.8 or higher
+
+**Download**:
 - https://www.python.org/downloads/
-- Kurulum sırasında **"Add Python to PATH"** seçeneğini işaretleyin!
+- Check **"Add Python to PATH"** during installation!
 
-**Kontrol**:
+**Verification**:
 ```bash
 python --version
 ```
 
-### 2. PHP ve Composer Kurulumu
+### 2. PHP and Composer Installation
 
-**PHP**: 8.2 veya üstü (XAMPP varsa zaten kurulu)
+**PHP**: 8.2 or higher (already installed if you have XAMPP)
 
 **Composer**:
 - https://getcomposer.org/download/
-- Global olarak kurulmalı
+- Must be installed globally
 
-**Kontrol**:
+**Verification**:
 ```bash
 php --version
 composer --version
 ```
 
-### 3. XAMPP (Opsiyonel)
+### 3. XAMPP (Optional)
 
-Eğer PHP ve Composer ayrı olarak kurmak istemiyorsanız, XAMPP tüm gereksinimleri içerir.
+If you don't want to install PHP and Composer separately, XAMPP includes all requirements.
 
 ---
 
-## Kurulum Adımları
+## Installation Steps
 
-### Adım 1: Dosyaları Yerleştirme
+### Step 1: Place Files
 
-ESC/POS Network Printer dosyalarını şu konuma kopyalayın:
+Copy the ESC/POS Network Printer files to this location:
 ```
 C:\xampp\htdocs\escpos-netprinter\
 ```
 
-### Adım 2: Python Kütüphanelerini Kurma
+### Step 2: Install Python Libraries
 
-Komut satırını (CMD) açın ve şu komutları çalıştırın:
+Open Command Prompt (CMD) and run these commands:
 
 ```bash
 pip install Flask
 pip install lxml
 pip install win10toast
+pip install pystray
+pip install Pillow
 ```
 
-**Açıklama**:
-- **Flask**: Web sunucusu ve HTTP API için
-- **lxml**: HTML/XML işleme için
-- **win10toast**: Windows 10/11 bildirim sistemi için
+**Description**:
+- **Flask**: For web server and HTTP API
+- **lxml**: For HTML/XML processing
+- **win10toast**: For Windows 10/11 notification system
+- **pystray**: For system tray icon
+- **Pillow**: For image processing
 
-### Adım 3: PHP Kütüphanelerini Kurma
+### Step 3: Install PHP Libraries
 
-Komut satırında escpos-netprinter klasörüne gidin:
+Navigate to escpos-netprinter folder in Command Prompt:
 
 ```bash
 cd C:\xampp\htdocs\escpos-netprinter
 composer install
 ```
 
-Bu komut şu kütüphaneleri kuracak:
-- **mike42/escpos-php**: ESC/POS komutlarını işleme
-- **chillerlan/php-qrcode**: QR kod oluşturma
-- Diğer bağımlılıklar
+This command will install:
+- **mike42/escpos-php**: ESC/POS command processing
+- **chillerlan/php-qrcode**: QR code generation
+- Other dependencies
 
-### Adım 4: Gerekli Klasörleri Oluşturma
+### Step 4: Create Required Folders
 
-Eğer yoksa şu klasörleri oluşturun:
+Create these folders if they don't exist:
 
 ```bash
 cd C:\xampp\htdocs\escpos-netprinter
@@ -114,59 +118,87 @@ mkdir web\receipts
 mkdir web\tmp
 ```
 
-**Açıklama**:
-- **web/receipts**: Yazdırılan HTML fişlerinin saklandığı yer
-- **web/tmp**: Geçici dosyaların tutulduğu yer
+**Description**:
+- **web/receipts**: Where printed HTML receipts are stored
+- **web/tmp**: Where temporary files are kept
 
-### Adım 5: Windows Yazıcı Kurulumu
+### Step 5: Windows Printer Setup
 
-Windows PowerShell'i **Yönetici olarak** açın ve şu komutları çalıştırın:
+Open PowerShell **as Administrator** and run these commands:
 
-#### 5.1. Yazıcı Portu Oluşturma
+#### 5.1. Create Printer Port
 
 ```powershell
 Add-PrinterPort -Name "TCP_127.0.0.1_9100" -PrinterHostAddress "127.0.0.1" -PortNumber 9100
 ```
 
-Bu komut TCP/IP yazıcı portu oluşturur.
+This creates a TCP/IP printer port.
 
-#### 5.2. Yazıcıyı Ekleme
+#### 5.2. Add Printer
 
 ```powershell
 Add-Printer -Name "ESC/POS Network Printer" -DriverName "Generic / Text Only" -PortName "TCP_127.0.0.1_9100"
 ```
 
-Bu komut "Generic / Text Only" sürücüsü ile yazıcıyı ekler.
+This adds the printer with "Generic / Text Only" driver.
 
-#### 5.3. Kontrol
+#### 5.3. Verification
 
 ```powershell
 Get-Printer | Where-Object {$_.Name -like "*ESC/POS*"}
 ```
 
-Yazıcının eklendiğini doğrulayın.
+Verify the printer was added successfully.
 
 ---
 
-## Başlatma
+## Starting the Application
 
-### Basit Başlatma (Varsayılan Ayarlarla)
+### Simple Start (Default Settings)
 
-En basit kullanım:
+The simplest usage:
 
 ```bash
 cd C:\xampp\htdocs\escpos-netprinter
 python escpos-netprinter.py
 ```
 
-Bu komut şu varsayılan ayarlarla başlatır:
-- **Web Arayüzü**: http://localhost:5000
+This starts with default settings:
+- **Web Interface**: http://localhost:5000
 - **JetDirect Port**: 9100
-- **Debug Modu**: Kapalı
+- **Debug Mode**: Off
 
-### Gelişmiş Başlatma (Ortam Değişkenleri İle)
+### System Tray Mode (Recommended)
 
-Özelleştirilmiş ayarlarla başlatma:
+Run with system tray icon:
+
+```bash
+cd C:\xampp\htdocs\escpos-netprinter
+python escpos-netprinter-tray.py
+```
+
+This will:
+- Run in the background with a system tray icon
+- Right-click the icon for: Open Web Interface, View Receipts, Exit
+- No terminal window to keep open
+
+### Standalone EXE (No Python Required)
+
+Build once with:
+```bash
+build-exe.bat
+```
+
+Then run:
+```bash
+dist\ESC-POS-Printer.exe
+```
+
+This provides a ~70MB standalone executable with embedded PHP runtime.
+
+### Advanced Start (With Environment Variables)
+
+Start with customized settings:
 
 ```bash
 cd C:\xampp\htdocs\escpos-netprinter
@@ -177,19 +209,19 @@ set ESCPOS_DEBUG=False
 python escpos-netprinter.py
 ```
 
-**Açıklama**:
-- **FLASK_RUN_HOST=0.0.0.0**: Tüm ağ arayüzlerinden erişim (0.0.0.0 = dışarıdan da erişilebilir)
-- **FLASK_RUN_PORT=8100**: Web arayüzü portu (varsayılan: 80)
-- **PRINTER_PORT=9100**: JetDirect yazıcı portu
-- **ESCPOS_DEBUG=False**: Debug loglarını kapat (True = açık)
+**Description**:
+- **FLASK_RUN_HOST=0.0.0.0**: Access from all network interfaces (0.0.0.0 = accessible from outside)
+- **FLASK_RUN_PORT=8100**: Web interface port (default: 80)
+- **PRINTER_PORT=9100**: JetDirect printer port
+- **ESCPOS_DEBUG=False**: Disable debug logs (True = enabled)
 
-### Windows Başlangıcına Ekleme (Opsiyonel)
+### Add to Windows Startup (Optional)
 
-Bilgisayar açıldığında otomatik başlatmak için:
+To start automatically when computer boots:
 
-#### Yöntem 1: Başlangıç Klasörüne Shortcut Ekleme
+#### Method 1: Add Shortcut to Startup Folder
 
-1. **start-printer.bat** dosyası oluşturun:
+1. Create **start-printer.bat** file:
 
 ```batch
 @echo off
@@ -201,318 +233,247 @@ set ESCPOS_DEBUG=False
 python escpos-netprinter.py
 ```
 
-2. Bu bat dosyasının kısayolunu oluşturun
-3. Kısayolu şu klasöre kopyalayın:
+2. Create a shortcut to this bat file
+3. Copy the shortcut to this folder:
 ```
-C:\Users\KULLANICI_ADINIZ\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+C:\Users\YOUR_USERNAME\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
 ```
 
-#### Yöntem 2: Zamanlanmış Görev (Task Scheduler)
+#### Method 2: Task Scheduler
 
-Daha gelişmiş kontrol için Windows Task Scheduler kullanabilirsiniz.
+Use Windows Task Scheduler for more advanced control.
 
 ---
 
-## SmartStock Entegrasyonu
+## Web Interface
 
-ESC/POS Network Printer'ın SmartStock ile çalışması için:
-
-### 1. SmartStock Connector'ı Başlatma
-
-SmartStock Connector uygulamasını çalıştırın:
-
-```bash
-cd C:\SmartStock-Connector
-npm start
-```
-
-Veya kurulu EXE dosyasını çalıştırın:
-```
-C:\SmartStock-Connector\dist\win-unpacked\SmartStock Connector.exe
-```
-
-### 2. Yazıcı Ayarları
-
-SmartStock Connector tray icon'una sağ tıklayın:
-1. **Settings** menüsüne girin
-2. **Default Printer** olarak "ESC/POS Network Printer" seçin
-3. **Auto Print** toggle'ını açın
-
-### 3. Test Yazdırma
-
-SmartStock arayüzünde:
-1. Bir fatura sayfasını açın
-2. "Kargo Etiket" butonuna tıklayın
-3. Sağ alt köşede Windows bildirimi görünmeli:
-   - "Yazici - Basarili"
-   - "Fis yazdirildi! Sure: X.XX saniye"
-
-### 4. Fişi Görüntüleme
-
-Tarayıcınızda http://localhost:5000/recus adresine gidin ve yazdırılan fişi HTML formatında görüntüleyin.
-
----
-
-## Web Arayüzü
-
-### Ana Sayfa
+### Home Page
 ```
 http://localhost:5000/
 ```
 
-Ana sayfada:
-- Sistem durumu
-- Son yazdırılan fiş
-- Toplam fiş sayısı
+The home page shows:
+- System status
+- Last printed receipt (live preview)
+- Total receipt count
+- Real-time updates without page refresh
 
-### Fiş Listesi
+### Receipt List
 ```
-http://localhost:5000/recus
-```
-
-Tüm yazdırılan fişlerin listesi:
-- Tarih ve saat
-- Fiş numarası
-- HTML görüntüleme linki
-
-### Tek Fiş Görüntüleme
-```
-http://localhost:5000/recus/DOSYA_ADI.html
+http://localhost:5000/receipts
 ```
 
-Belirli bir fişi tam ekran görüntüleme.
+List of all printed receipts:
+- Date and time
+- Receipt number
+- HTML view link
+
+### Single Receipt View
+```
+http://localhost:5000/receipts/FILENAME.html
+```
+
+Full-screen display of a specific receipt.
 
 ---
 
-## Ortam Değişkenleri
+## Environment Variables
 
-Sistemin davranışını kontrol eden ortam değişkenleri:
+Environment variables that control system behavior:
 
 ### FLASK_RUN_HOST
 
-**Varsayılan**: `127.0.0.1` (sadece local)
-**Önerilen**: `0.0.0.0` (ağdan erişim için)
+**Default**: `127.0.0.1` (local only)
+**Recommended**: `0.0.0.0` (for network access)
 
 ```bash
 set FLASK_RUN_HOST=0.0.0.0
 ```
 
-**Kullanım**:
-- `127.0.0.1`: Sadece bilgisayarın kendisinden erişilebilir
-- `0.0.0.0`: Ağdaki diğer cihazlardan da erişilebilir
+**Usage**:
+- `127.0.0.1`: Only accessible from the computer itself
+- `0.0.0.0`: Accessible from other devices on the network
 
 ### FLASK_RUN_PORT
 
-**Varsayılan**: `80`
-**Alternatif**: `5000`, `8100`, vb.
+**Default**: `80`
+**Alternative**: `5000`, `8100`, etc.
 
 ```bash
 set FLASK_RUN_PORT=8100
 ```
 
-**Not**: Port 80 kullanmak için yönetici izni gerekebilir.
+**Note**: Using port 80 may require administrator privileges.
 
 ### PRINTER_PORT
 
-**Varsayılan**: `9100` (JetDirect standart portu)
+**Default**: `9100` (JetDirect standard port)
 
 ```bash
 set PRINTER_PORT=9100
 ```
 
-**Uyarı**: Bu portu değiştirirseniz, Windows yazıcı portu da aynı porta ayarlanmalı!
+**Warning**: If you change this port, the Windows printer port must also be set to the same port!
 
 ### ESCPOS_DEBUG
 
-**Varsayılan**: `False`
-**Değerler**: `True` veya `False`
+**Default**: `False`
+**Values**: `True` or `False`
 
 ```bash
 set ESCPOS_DEBUG=True
 ```
 
-**Debug Modu Açıksa**:
-- Tüm ESC/POS komutları loglanır
-- CUPS yazıcı sürücüsü logları gösterilir
-- JetDirect bağlantı detayları gösterilir
-- Web istekleri loglanır
-- Geçici dosyalar silinmez (web/tmp/)
+**When Debug Mode is On**:
+- All ESC/POS commands are logged
+- CUPS driver logs are shown
+- JetDirect connection details are shown
+- Web requests are logged
+- Temporary files are not deleted (web/tmp/)
 
-**Debug Modu Kapalıysa**:
-- Sadece hata mesajları gösterilir
-- Daha temiz çıktı
-- Geçici dosyalar otomatik silinir
+**When Debug Mode is Off**:
+- Only error messages are shown
+- Cleaner output
+- Temporary files are automatically deleted
 
 ---
 
-## Sorun Giderme
+## Troubleshooting
 
-### Problem: Port 9100 kullanımda
+### Problem: Port 9100 in use
 
-**Hata Mesajı**:
+**Error Message**:
 ```
 OSError: [WinError 10048] Only one usage of each socket address
 ```
 
-**Çözüm**:
+**Solution**:
 ```bash
 netstat -ano | findstr :9100
 taskkill /PID XXXX /F
 ```
 
-### Problem: Windows bildirimi çıkmıyor
+### Problem: No Windows notifications
 
-**Kontrol**:
-1. Windows Bildirim Ayarları açık mı?
-2. Python çalışıyor mu?
+**Check**:
+1. Are Windows Notification Settings enabled?
+2. Is Python running?
 
-**Çözüm**:
+**Solution**:
 ```bash
-# Python procesini kontrol et
+# Check Python process
 tasklist | findstr python
 
-# Yoksa tekrar başlat
+# Restart if not running
 python escpos-netprinter.py
 ```
 
-### Problem: Yazıcı bulunamıyor
+### Problem: Printer not found
 
-**Kontrol**:
+**Check**:
 ```powershell
 Get-Printer | Where-Object {$_.Name -like "*ESC/POS*"}
 ```
 
-**Çözüm - Yazıcıyı yeniden ekle**:
+**Solution - Re-add the printer**:
 ```powershell
-# Önce portu kontrol et
+# Check port first
 Get-PrinterPort | Where-Object {$_.Name -like "*9100*"}
 
-# Port yoksa oluştur
+# Create port if missing
 Add-PrinterPort -Name "TCP_127.0.0.1_9100" -PrinterHostAddress "127.0.0.1" -PortNumber 9100
 
-# Yazıcıyı ekle
+# Add printer
 Add-Printer -Name "ESC/POS Network Printer" -DriverName "Generic / Text Only" -PortName "TCP_127.0.0.1_9100"
 ```
 
-### Problem: SmartStock Connector bağlanamıyor
+### Problem: HTML receipts not showing
 
-**Hata**: `localhost:37842 refused`
+**Possible Causes**:
+1. File creation error (error 22)
+2. web/receipts folder doesn't exist
+3. Permission issue
 
-**Çözüm**:
+**Solution**:
 ```bash
-# Connector çalışıyor mu kontrol et
-tasklist | findstr node
-tasklist | findstr electron
-
-# Çalışmıyorsa başlat
-cd C:\SmartStock-Connector
-npm start
-```
-
-### Problem: HTML fişleri görünmüyor
-
-**Olası Sebepler**:
-1. Dosya oluşturma hatası (error 22)
-2. web/receipts klasörü yok
-3. İzin sorunu
-
-**Çözüm**:
-```bash
-# Klasörleri kontrol et
+# Check folders
 dir C:\xampp\htdocs\escpos-netprinter\web\receipts
 
-# Yoksa oluştur
+# Create if missing
 mkdir C:\xampp\htdocs\escpos-netprinter\web\receipts
 mkdir C:\xampp\htdocs\escpos-netprinter\web\tmp
 
-# Python'u yeniden başlat
+# Restart Python
 ```
 
-### Problem: "Module not found" hatası
+### Problem: "Module not found" error
 
-**Hata**: `ModuleNotFoundError: No module named 'Flask'`
+**Error**: `ModuleNotFoundError: No module named 'Flask'`
 
-**Çözüm**:
+**Solution**:
 ```bash
-# Tüm gereksinimleri tekrar kur
-pip install Flask lxml win10toast
+# Reinstall all requirements
+pip install Flask lxml win10toast pystray Pillow
 
-# PHP bağımlılıklarını kur
+# Install PHP dependencies
 cd C:\xampp\htdocs\escpos-netprinter
 composer install
 ```
 
-### Problem: Port izni hatası
+### Problem: Port permission error
 
-**Hata**: `Permission denied: 127.0.0.1:80`
+**Error**: `Permission denied: 127.0.0.1:80`
 
-**Çözüm 1**: Farklı port kullan
+**Solution 1**: Use a different port
 ```bash
 set FLASK_RUN_PORT=8100
 python escpos-netprinter.py
 ```
 
-**Çözüm 2**: CMD'yi Yönetici olarak aç
+**Solution 2**: Open CMD as Administrator
 
 ---
 
-## Port Bilgileri
+## Port Information
 
-Sistem 3 farklı port kullanır:
+The system uses 2 main ports:
 
-### Port 9100 - JetDirect (Yazıcı Protokolü)
+### Port 9100 - JetDirect (Printer Protocol)
 
-**Kullanım**: ESC/POS komutlarını almak için
-**Protokol**: TCP/IP
-**Bağlanan**: SmartStock Connector
+**Usage**: To receive ESC/POS commands
+**Protocol**: TCP/IP
+**Connected by**: External applications sending print jobs
 
-**Kontrol**:
+**Check**:
 ```bash
 netstat -an | findstr :9100
 ```
 
-### Port 5000 (veya 8100) - Web Arayüzü
+### Port 5000 (or 8100) - Web Interface
 
-**Kullanım**: Fişleri tarayıcıda görüntüleme
-**Protokol**: HTTP
+**Usage**: To view receipts in browser
+**Protocol**: HTTP
 **URL**: http://localhost:5000
 
-**Kontrol**:
+**Check**:
 ```bash
 netstat -an | findstr :5000
 ```
 
-### Port 37842 - SmartStock Connector API
-
-**Kullanım**: SmartStock web arayüzü ile yerel sistem arasında köprü
-**Protokol**: HTTP (REST API)
-**Kullanıcı**: SmartStock web arayüzü (JavaScript)
-
-**Kontrol**:
-```bash
-netstat -an | findstr :37842
-```
-
 ---
 
-## Sistem Mimarisi
+## System Architecture
 
 ```
 ┌─────────────────────┐
-│  SmartStock Web     │  (Uzak Sunucu - smartstock.com)
-│   (Laravel/PHP)     │
+│  Your Application   │  (Any system that can print to network printer)
+│   (POS/Inventory)   │
 └──────────┬──────────┘
-           │ HTML/JS
+           │ Print Job (ESC/POS commands)
            ▼
 ┌─────────────────────┐
-│    Tarayıcı         │  (Kullanıcının PC'si)
-│   (Chrome/Edge)     │
-└──────────┬──────────┘
-           │ fetch('http://localhost:37842/...')
-           ▼
-┌─────────────────────┐
-│ SmartStock Connector│  (Port 37842)
-│   (Node.js/Electron)│
+│ Windows Printer     │  (Generic / Text Only driver)
+│ Spooler (Port 9100) │
 └──────────┬──────────┘
            │ TCP Socket (127.0.0.1:9100)
            ▼
@@ -521,56 +482,57 @@ netstat -an | findstr :37842
 │  (Python/Flask)     │
 └──────────┬──────────┘
            │
-           ├─> HTML fişleri (web/receipts/)
-           └─> Windows Bildirimi
+           ├─> HTML receipts (web/receipts/)
+           ├─> Windows Notification
+           └─> Real-time web preview (Vue.js + SSE)
 ```
 
 ---
 
-## Güvenlik Notları
+## Security Notes
 
-### 1. Sadece Yerel Ağda Kullanın
+### 1. Use Only on Local Network
 
-Bu sistem internet üzerinden erişime açık olmamalı:
-- Flask development sunucusu kullanıyor (production için uygun değil)
-- Kimlik doğrulama yok
-- Şifreleme yok
+This system should not be exposed to the internet:
+- Uses Flask development server (not suitable for production)
+- No authentication
+- No encryption
 
-### 2. Güvenlik Duvarı Ayarları
+### 2. Firewall Settings
 
-Eğer ağdan erişim gerekiyorsa:
-- Sadece güvenilir yerel ağdan erişime izin verin
-- Port 9100 ve 5000'i sadece yerel ağa açın
-- VPN kullanın
+If network access is needed:
+- Allow access only from trusted local network
+- Open ports 9100 and 5000 only to local network
+- Use VPN
 
-### 3. Fiş Verilerini Koruyun
+### 3. Protect Receipt Data
 
-Yazdırılan fişler hassas bilgi içerebilir:
-- `web/receipts/` klasörünü düzenli yedekleyin
-- Eski fişleri düzenli silin
-- Klasör izinlerini kontrol edin
+Printed receipts may contain sensitive information:
+- Backup the `web/receipts/` folder regularly
+- Delete old receipts regularly
+- Check folder permissions
 
 ---
 
-## Performans İpuçları
+## Performance Tips
 
-### 1. Debug Modunu Kapatın
+### 1. Disable Debug Mode
 
-Production kullanımda:
+For production use:
 ```bash
 set ESCPOS_DEBUG=False
 ```
 
-### 2. Eski Fişleri Temizleyin
+### 2. Clean Old Receipts
 
-Manuel temizlik:
+Manual cleanup:
 ```bash
 del /Q C:\xampp\htdocs\escpos-netprinter\web\receipts\*.html
 ```
 
-Otomatik temizlik için Windows Task Scheduler kullanabilirsiniz.
+Use Windows Task Scheduler for automatic cleanup.
 
-### 3. Geçici Dosyaları Temizleyin
+### 3. Clean Temporary Files
 
 ```bash
 del /Q C:\xampp\htdocs\escpos-netprinter\web\tmp\*.*
@@ -578,62 +540,55 @@ del /Q C:\xampp\htdocs\escpos-netprinter\web\tmp\*.*
 
 ---
 
-## SSS (Sık Sorulan Sorular)
+## FAQ (Frequently Asked Questions)
 
-### S: Birden fazla bilgisayarda kullanabilir miyim?
+### Q: Can I use this on multiple computers?
 
-**C**: Evet! Her bilgisayarda:
-1. Python ve bağımlılıkları kurun
-2. escpos-netprinter'ı başlatın
-3. SmartStock Connector'ı başlatın
-4. Her bilgisayar kendi fişlerini kendi ekranında gösterecek
+**A**: Yes! On each computer:
+1. Install Python and dependencies
+2. Start escpos-netprinter
+3. Each computer will show its own receipts on its own screen
 
-### S: Gerçek yazıcıya da yazdırabilir miyim?
+### Q: Can I also print to a real printer?
 
-**C**: Evet! Windows Printer Sharing kullanarak:
-1. ESC/POS Network Printer'ı paylaş
-2. Gerçek termal yazıcıda "Copy print jobs" ayarını yapın
-3. Hem HTML'de hem kağıtta fiş alabilirsiniz
+**A**: Yes! Using Windows Printer Sharing:
+1. Share the ESC/POS Network Printer
+2. Configure "Copy print jobs" on a real thermal printer
+3. You can get receipts both in HTML and on paper
 
-### S: Fişleri ne kadar süre saklarım?
+### Q: How long should I keep the receipts?
 
-**C**: İhtiyacınıza göre:
-- Muhasebe kayıtları için: Minimum 7 yıl
-- Günlük operasyonlar için: 30-90 gün
-- Disk alanı sınırlıysa: 7-15 gün
+**A**: Depends on your needs:
+- For accounting records: Minimum 7 years
+- For daily operations: 30-90 days
+- If disk space is limited: 7-15 days
 
-### S: Port 9100 neden kullanılıyor?
+### Q: Why is port 9100 used?
 
-**C**: Port 9100, HP JetDirect protokolünün standart portudur. Çoğu yazıcı sürücüsü bu portu otomatik tanır.
-
-### S: SmartStock uzak sunucuda, yazıcı local'de nasıl çalışıyor?
-
-**C**: JavaScript kodu tarayıcıda çalıştığı için `localhost` kullanıcının kendi bilgisayarını işaret eder. Bu sayede uzak sunucudaki kod, local yazıcıya erişebilir.
+**A**: Port 9100 is the standard port for HP JetDirect protocol. Most printer drivers automatically recognize this port.
 
 ---
 
-## Lisans ve Telif Hakkı
+## License and Copyright
 
-Bu sistem, açık kaynak ESC/POS araçları kullanılarak geliştirilmiştir:
+This system is developed using open-source ESC/POS tools:
 
-- **escpos-netprinter**: gilbertfl tarafından geliştirildi
-- **mike42/escpos-php**: MIT Lisansı
-- **Flask**: BSD Lisansı
-
-SmartStock entegrasyonu için özel olarak uyarlanmıştır.
-
----
-
-## Destek ve İletişim
-
-Sorun yaşıyorsanız:
-
-1. **Logları kontrol edin**: `ESCPOS_DEBUG=True` ile çalıştırın
-2. **Port kontrolü yapın**: `netstat -an | findstr :9100`
-3. **Python versiyonunu kontrol edin**: `python --version` (3.8+)
+- **escpos-netprinter**: Originally developed by gilbertfl
+- **mike42/escpos-php**: MIT License
+- **Flask**: BSD License
+- **Vue.js**: MIT License
 
 ---
 
-**Son Güncelleme**: 2025-01-02
-**Versiyon**: 1.0
-**Uyumlu SmartStock**: v12.0+
+## Support and Contact
+
+If you're experiencing issues:
+
+1. **Check logs**: Run with `ESCPOS_DEBUG=True`
+2. **Check ports**: `netstat -an | findstr :9100`
+3. **Check Python version**: `python --version` (3.8+)
+
+---
+
+**Last Updated**: 2025-01-03
+**Version**: 2.0 (Vue.js Edition)
