@@ -24,20 +24,20 @@ if SYSTEM_PLATFORM == 'Windows':
         from win10toast import ToastNotifier
         toaster = ToastNotifier()
         NOTIFICATIONS_ENABLED = True
-        print(f"✅ Platform: Windows - Toast notifications enabled (tested)")
+        print(f"[OK] Platform: Windows - Toast notifications enabled (tested)")
     except ImportError:
-        print("⚠️  win10toast not installed - notifications disabled")
+        print("[WARNING] win10toast not installed - notifications disabled")
         print("   Install: pip install win10toast")
 elif SYSTEM_PLATFORM == 'Darwin':  # macOS
     # macOS notification support (untested)
     NOTIFICATIONS_ENABLED = True
-    print(f"✅ Platform: macOS - Desktop notifications enabled (untested)")
+    print(f"[OK] Platform: macOS - Desktop notifications enabled (untested)")
 elif SYSTEM_PLATFORM == 'Linux':
     # Linux notification support (untested)
     NOTIFICATIONS_ENABLED = True
-    print(f"✅ Platform: Linux - Desktop notifications enabled (untested)")
+    print(f"[OK] Platform: Linux - Desktop notifications enabled (untested)")
 else:
-    print(f"⚠️  Platform: {SYSTEM_PLATFORM} - Notifications not supported")
+    print(f"[WARNING] Platform: {SYSTEM_PLATFORM} - Notifications not supported")
 
 
 #Network ESC/pos printer server
@@ -1478,7 +1478,7 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
                         global SYSTEM_PLATFORM, NOTIFICATIONS_ENABLED, toaster
 
                         if not NOTIFICATIONS_ENABLED:
-                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+                            print(f"[OK] Receipt printed! Duration: {elapsed_str}", flush=True)
                             return
 
                         try:
@@ -1504,10 +1504,10 @@ class ESCPOSHandler(socketserver.StreamRequestHandler):
                                     f'Receipt printed!\nDuration: {elapsed_str}'
                                 ], check=False)
 
-                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+                            print(f"[OK] Receipt printed! Duration: {elapsed_str}", flush=True)
                         except Exception as e:
-                            print(f"⚠️  Notification error: {e}", flush=True)
-                            print(f"✅ Receipt printed! Duration: {elapsed_str}", flush=True)
+                            print(f"[WARNING] Notification error: {e}", flush=True)
+                            print(f"[OK] Receipt printed! Duration: {elapsed_str}", flush=True)
 
                     notification_thread = threading.Thread(target=show_notification)
                     notification_thread.start()

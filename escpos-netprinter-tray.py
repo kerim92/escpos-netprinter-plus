@@ -79,34 +79,36 @@ def start_server():
     print(f"  Web Interface: http://localhost:{FLASK_PORT}")
     print(f"  Printer Port: {PRINTER_PORT}")
 
+    # Check if server script exists
+    if not server_script.exists():
+        print(f"ERROR: Server script not found: {server_script}")
+        print(f"Looking in: {script_dir}")
+        return
+
     try:
         # Start the server process
         if platform.system() == 'Windows':
-            # On Windows, use pythonw.exe to avoid console window
-            python_exe = sys.executable.replace('python.exe', 'pythonw.exe')
-            if not os.path.exists(python_exe):
-                python_exe = sys.executable
-
+            # On Windows, keep it simple - just use python.exe
             server_process = subprocess.Popen(
-                [python_exe, str(server_script)],
+                [sys.executable, str(server_script)],
                 env=env,
-                creationflags=subprocess.CREATE_NO_WINDOW if platform.system() == 'Windows' else 0,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                cwd=str(script_dir)  # Set working directory
             )
         else:
             server_process = subprocess.Popen(
                 [sys.executable, str(server_script)],
                 env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                cwd=str(script_dir)
             )
 
         print("Server started successfully!")
+        print(f"Server PID: {server_process.pid}")
         print("System tray icon is running. Right-click for options.")
 
     except Exception as e:
         print(f"ERROR: Failed to start server: {e}")
+        import traceback
+        traceback.print_exc()
         server_process = None
 
 def stop_server():
@@ -150,6 +152,8 @@ def setup_tray():
 
     # Create menu
     menu = Menu(
+        MenuItem('ESC/POS Network Printer Plus', None, enabled=False),
+        Menu.SEPARATOR,
         MenuItem('Open Web Interface', open_web_interface, default=True),
         MenuItem('View Receipts', open_receipts),
         Menu.SEPARATOR,
