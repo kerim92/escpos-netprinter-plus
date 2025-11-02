@@ -6,11 +6,11 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)](https://github.com/kerim92/escpos-netprinter-plus)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Enhanced ESC/POS thermal printer emulator** with native notifications, duration tracking, and SmartStock integration. Converts thermal printer commands to HTML receipts and displays them in a web interface.
+> **Enhanced ESC/POS thermal printer emulator** with native notifications and duration tracking. Converts thermal printer commands to HTML receipts and displays them in a web interface.
 
 Perfect for development, testing, and production environments where you need to capture and view thermal printer output without physical hardware. No Docker required - runs natively on all platforms.
 
-**Key Features:** ✨ Toast Notifications • ⏱️ Duration Tracking • 🌍 i18n Support • 🔌 SmartStock Integration
+**Key Features:** ✨ Toast Notifications • ⏱️ Duration Tracking • 🌍 Cross-platform Support • 🔌 Easy Integration
 
 ![ESC/POS Network Printer](https://github.com/gilbertfl/escpos-netprinter/assets/83510612/8aefc8c5-01ab-45f3-a992-e2850bef70f6)
 
@@ -29,7 +29,7 @@ Perfect for development, testing, and production environments where you need to 
 - ⏱️ **Print Duration Tracking**: Shows exact time taken for each print job
 - 🌍 **Multi-language Support**: Notifications in English (easily customizable to other languages)
 - 🔧 **Cross-platform Filename Fix**: Fixed datetime format to avoid illegal characters in filenames
-- 🔌 **SmartStock Integration**: Seamless integration with SmartStock inventory system
+- 🔌 **External System Integration**: Easy integration with any inventory or POS system
 - 📊 **Real-time Status Updates**: Live feedback on print operations
 - 🖥️ **Platform Detection**: Automatically adapts to Windows, macOS, or Linux
 
@@ -39,7 +39,6 @@ Perfect for development, testing, and production environments where you need to 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
-- [SmartStock Integration](#smartstock-integration)
 - [Testing](#testing)
 - [Web Interface](#web-interface)
 - [Troubleshooting](#troubleshooting)
@@ -73,7 +72,6 @@ Perfect for development, testing, and production environments where you need to 
 | **JetDirect (Port 9100)** | ✅ Tested | ✅ Should work | ✅ Should work |
 | **Desktop Notifications** | ✅ Tested (toast) | ⚠️ Untested (osascript) | ⚠️ Untested (notify-send) |
 | **Print Duration Tracking** | ✅ Tested | ✅ Should work | ✅ Should work |
-| **SmartStock Integration** | ✅ Tested | ⚠️ Untested | ⚠️ Untested |
 
 **Testing Status:**
 - **Windows 10/11**: Fully tested ✅ (build 26100)
@@ -175,7 +173,26 @@ lpadmin -p "ESCPOS-Network-Printer" -v socket://127.0.0.1:9100 -E
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### System Tray Mode (Recommended for Windows)
+
+Run with system tray icon (no terminal window):
+
+```bash
+cd C:\path\to\escpos-netprinter
+python escpos-netprinter-tray.py
+```
+
+This will:
+- Run in the background with a system tray icon
+- Right-click the icon for: Open Web Interface, View Receipts, Exit
+- No terminal window to keep open
+
+**Requirements for System Tray:**
+```bash
+pip install pystray Pillow
+```
+
+### Basic Usage (Terminal Mode)
 
 ```bash
 cd C:\path\to\escpos-netprinter
@@ -199,6 +216,20 @@ python escpos-netprinter.py
 
 ### Windows Startup (Optional)
 
+#### Option 1: System Tray (Recommended)
+
+Create a shortcut to `escpos-netprinter-tray.py` and place it in:
+```
+C:\Users\YOUR_USERNAME\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+```
+
+Or use the included `start-printer-hidden.vbs` for silent startup:
+```batch
+# Double-click start-printer-hidden.vbs - runs in background without terminal
+```
+
+#### Option 2: Terminal Mode
+
 Use the included `start-printer.bat`:
 
 ```batch
@@ -206,10 +237,7 @@ cd C:\path\to\escpos-netprinter
 start-printer.bat
 ```
 
-Or place shortcut to `start-printer.bat` in:
-```
-C:\Users\YOUR_USERNAME\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
-```
+Or place shortcut to `start-printer.bat` in the Startup folder.
 
 ### macOS/Linux Startup (Optional)
 
@@ -260,47 +288,6 @@ Debug mode provides:
 - Web request logs
 - Temporary files are not deleted
 
-## 🔌 SmartStock Integration
-
-This fork includes seamless integration with SmartStock inventory management system.
-
-### Prerequisites
-
-1. **SmartStock Connector** running on port 37842
-2. **ESC/POS Network Printer** (this application) running on port 9100
-3. **SmartStock Web Interface** (can be on remote server)
-
-### Setup
-
-1. Start ESC/POS Network Printer:
-```bash
-python escpos-netprinter.py
-```
-
-2. Start SmartStock Connector:
-```bash
-cd C:\SmartStock-Connector
-npm start
-```
-
-3. In SmartStock Connector settings:
-   - Set default printer to "ESC/POS Network Printer"
-   - Enable auto-print toggle
-
-### Architecture
-
-```
-SmartStock Web (Remote Server)
-    ↓ JavaScript
-Browser (User's PC)
-    ↓ fetch('http://localhost:37842/...')
-SmartStock Connector (Port 37842)
-    ↓ TCP Socket
-ESC/POS Network Printer (Port 9100)
-    ↓
-HTML Receipts + Windows Notification
-```
-
 ## 🧪 Testing
 
 ### Test 1: Basic Connectivity
@@ -334,19 +321,9 @@ Hello World
 
 Press `Ctrl+]`, then type `quit`.
 
-Check web interface at http://localhost:5000/recus - you should see the receipt.
+Check web interface at http://localhost:5000/receipts - you should see the receipt.
 
-### Test 3: SmartStock Integration Test
-
-1. Open SmartStock web interface
-2. Navigate to an invoice page
-3. Click "Kargo Etiket" (Cargo Label) button
-4. Verify:
-   - ✅ Windows notification appears: "Receipt printed! Duration: X.XX seconds"
-   - ✅ Receipt appears at http://localhost:5000/recus
-   - ✅ No errors in console
-
-### Test 4: Performance Test
+### Test 3: Performance Test
 
 Print 10 receipts and check average duration:
 
@@ -360,7 +337,7 @@ Receipt printed! Duration: 0.15 seconds
 
 Average should be < 0.5 seconds per receipt.
 
-### Test 5: Windows Notification Test
+### Test 4: Windows Notification Test
 
 Manually trigger notification (Python):
 
@@ -388,7 +365,7 @@ Shows:
 
 ### Receipt List
 ```
-http://localhost:5000/recus
+http://localhost:5000/receipts
 ```
 
 Browse all printed receipts:
@@ -398,7 +375,7 @@ Browse all printed receipts:
 
 ### Individual Receipt
 ```
-http://localhost:5000/recus/receipt2025Jan02_143045.123456EST.html
+http://localhost:5000/receipts/receipt2025Jan02_143045.123456EST.html
 ```
 
 View specific receipt in full-screen HTML format.
@@ -500,7 +477,6 @@ This is a fork of [escpos-netprinter](https://github.com/gilbertfl/escpos-netpri
 
 - **gilbertfl** - For creating the original escpos-netprinter project
 - **Mike Connelly (mike42)** - For the excellent escpos-php library
-- **SmartStock Team** - For integration testing and feedback
 - **ESC/POS Community** - For documentation and support
 - **Claude Code** - Claude helped me a lot, thanks to [Claude Code](https://claude.com/claude-code) for helping me build this project
 
@@ -511,7 +487,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### MIT License Summary
 
 ```
-Copyright (c) 2025 SmartStock Contributors
+Copyright (c) 2025 Kerim Şentürk (escpos-netprinter-plus)
 Copyright (c) 2024 gilbertfl (original escpos-netprinter)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -545,7 +521,6 @@ SOFTWARE.
 - ✅ Core functionality working
 - ✅ Cross-platform support (Windows, macOS, Linux)
 - ✅ Platform-specific notifications (Windows)
-- ✅ SmartStock integration tested
 - ✅ Production-ready
 - 🚧 macOS/Linux native notifications (planned)
 - 🚧 GUI configuration tool (planned)
