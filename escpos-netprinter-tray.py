@@ -10,6 +10,7 @@ import subprocess
 import threading
 import webbrowser
 import platform
+import ctypes
 from pathlib import Path
 
 # Check if pystray is available
@@ -200,6 +201,67 @@ def setup_tray():
     # Run the icon (this blocks)
     icon.run()
 
+def check_single_instance():
+    """Check if another instance is already running (Windows only)"""
+    if platform.system() != 'Windows':
+        return True  # Skip check on non-Windows platforms
+
+    # Try to create a mutex
+    mutex_name = "Global\\ESC_POS_Network_Printer_Mutex"
+    kernel32 = ctypes.windll.kernel32
+
+    # CreateMutexW returns NULL if mutex already exists
+    mutex = kernel32.CreateMutexW(None, False, mutex_name)
+    last_error = kernel32.GetLastError()
+
+    ERROR_ALREADY_EXISTS = 183
+
+    if last_error == ERROR_ALREADY_EXISTS:
+        # Another instance is running
+        MB_YESNO = 0x04
+        MB_ICONQUESTION = 0x20
+        MB_ICONINFORMATION = 0x40
+        IDYES = 6
+
+        # Ask user if they want to restart
+        result = ctypes.windll.user32.MessageBoxW(
+            0,
+            "ESC/POS Network Printer is already running!\n\nDo you want to restart it?",
+            "Already Running",
+            MB_YESNO | MB_ICONQUESTION
+        )
+
+        if result == IDYES:
+            # Kill existing processes
+            import subprocess
+            subprocess.run(['taskkill', '/F', '/IM', 'ESC-POS-Printer.exe'],
+                         capture_output=True)
+            subprocess.run(['taskkill', '/F', '/IM', 'python.exe', '/FI',
+                          f'WINDOWTITLE eq ESC/POS Network Printer*'],
+                         capture_output=True)
+            import time
+            time.sleep(1)  # Wait for processes to terminate
+            return True
+        else:
+            return False
+
+    return True
+
+def show_startup_message():
+    """Show startup notification (Windows only)"""
+    if platform.system() != 'Windows':
+        return
+
+    MB_ICONINFORMATION = 0x40
+    MB_OK = 0x00
+
+    ctypes.windll.user32.MessageBoxW(
+        0,
+        f"ESC/POS Network Printer started successfully!\n\nWeb Interface: http://localhost:{FLASK_PORT}\nPrinter Port: {PRINTER_PORT}\n\nRight-click the system tray icon for options.",
+        "ESC/POS Network Printer",
+        MB_OK | MB_ICONINFORMATION
+    )
+
 def main():
     """Main entry point"""
     print("=" * 60)
@@ -207,6 +269,11 @@ def main():
     print("Author: Kerim Şentürk")
     print("=" * 60)
     print()
+
+    # Check for single instance (Windows only)
+    if not check_single_instance():
+        print("Another instance is already running. Exiting...")
+        return 0
 
     if not TRAY_AVAILABLE:
         print("WARNING: System tray not available - starting in console mode")
@@ -226,6 +293,9 @@ def main():
         return 0
 
     try:
+        # Show startup message in a separate thread to not block
+        threading.Thread(target=show_startup_message, daemon=True).start()
+
         setup_tray()
     except KeyboardInterrupt:
         print("\nInterrupted by user")
