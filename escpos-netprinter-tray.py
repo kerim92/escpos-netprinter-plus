@@ -65,8 +65,14 @@ def start_server():
         print("Server is already running")
         return
 
-    # Get the script directory
-    script_dir = Path(__file__).parent
+    # Get the script directory and server script path
+    if getattr(sys, 'frozen', False):
+        # Running as EXE - files are in PyInstaller's temp directory
+        script_dir = Path(sys._MEIPASS)
+    else:
+        # Running as Python script
+        script_dir = Path(__file__).parent
+
     server_script = script_dir / 'escpos-netprinter.py'
 
     # Set environment variables
@@ -84,24 +90,37 @@ def start_server():
     if getattr(sys, 'frozen', False):
         # Running as EXE - use thread instead of subprocess
         print("Running in EXE mode - starting server in thread")
+        print(f"Server script path: {server_script}")
         import threading
 
         def run_server_thread():
-            # Set environment variables for this process
-            os.environ['FLASK_RUN_HOST'] = FLASK_HOST
-            os.environ['FLASK_RUN_PORT'] = FLASK_PORT
-            os.environ['PRINTER_PORT'] = PRINTER_PORT
-            os.environ['ESCPOS_DEBUG'] = 'False'
+            try:
+                # Set environment variables for this process
+                os.environ['FLASK_RUN_HOST'] = FLASK_HOST
+                os.environ['FLASK_RUN_PORT'] = FLASK_PORT
+                os.environ['PRINTER_PORT'] = PRINTER_PORT
+                os.environ['ESCPOS_DEBUG'] = 'False'
 
-            # Import and run the server module directly
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("escpos_server", server_script)
-            server_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(server_module)
+                print(f"Thread: Loading server module from {server_script}")
+
+                # Import and run the server module directly
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("escpos_server", server_script)
+                if spec is None:
+                    raise Exception(f"Failed to load spec from {server_script}")
+
+                server_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(server_module)
+                print("Thread: Server module loaded and executed successfully")
+
+            except Exception as e:
+                print(f"ERROR in server thread: {e}")
+                import traceback
+                traceback.print_exc()
 
         server_thread = threading.Thread(target=run_server_thread, daemon=True)
         server_thread.start()
-        print("Server started in thread mode!")
+        print("Server thread started!")
         print("System tray icon is running. Right-click for options.")
         return
 
@@ -239,8 +258,18 @@ def check_single_instance():
             subprocess.run(['taskkill', '/F', '/IM', 'python.exe', '/FI',
                           f'WINDOWTITLE eq ESC/POS Network Printer*'],
                          capture_output=True)
+
+            # Wait for processes to fully terminate and mutex to be released
             import time
-            time.sleep(1)  # Wait for processes to terminate
+            print("Waiting for old instance to close...")
+            time.sleep(3)  # Wait longer for mutex to be released
+
+            # Force release by trying to acquire and release the mutex
+            try:
+                kernel32.ReleaseMutex(mutex)
+            except:
+                pass
+
             return True
         else:
             return False
