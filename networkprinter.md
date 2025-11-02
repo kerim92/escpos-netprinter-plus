@@ -82,7 +82,7 @@ Open Command Prompt (CMD) and run these commands:
 ```bash
 pip install Flask
 pip install lxml
-pip install win10toast
+pip install winotify
 pip install pystray
 pip install Pillow
 ```
@@ -90,7 +90,7 @@ pip install Pillow
 **Description**:
 - **Flask**: For web server and HTTP API
 - **lxml**: For HTML/XML processing
-- **win10toast**: For Windows 10/11 notification system
+- **winotify**: For Windows 10/11 notification system
 - **pystray**: For system tray icon
 - **Pillow**: For image processing
 
@@ -164,7 +164,7 @@ python escpos-netprinter.py
 ```
 
 This starts with default settings:
-- **Web Interface**: http://localhost:5000
+- **Web Interface**: http://localhost:8100
 - **JetDirect Port**: 9100
 - **Debug Mode**: Off
 
@@ -249,7 +249,7 @@ Use Windows Task Scheduler for more advanced control.
 
 ### Home Page
 ```
-http://localhost:5000/
+http://localhost:8100/
 ```
 
 The home page shows:
@@ -260,7 +260,7 @@ The home page shows:
 
 ### Receipt List
 ```
-http://localhost:5000/receipts
+http://localhost:8100/receipts
 ```
 
 List of all printed receipts:
@@ -270,7 +270,7 @@ List of all printed receipts:
 
 ### Single Receipt View
 ```
-http://localhost:5000/receipts/FILENAME.html
+http://localhost:8100/receipts/FILENAME.html
 ```
 
 Full-screen display of a specific receipt.
@@ -296,8 +296,8 @@ set FLASK_RUN_HOST=0.0.0.0
 
 ### FLASK_RUN_PORT
 
-**Default**: `80`
-**Alternative**: `5000`, `8100`, etc.
+**Default**: `8100`
+**Alternative**: `5000`, `80`, etc.
 
 ```bash
 set FLASK_RUN_PORT=8100
@@ -413,7 +413,7 @@ mkdir C:\xampp\htdocs\escpos-netprinter\web\tmp
 **Solution**:
 ```bash
 # Reinstall all requirements
-pip install Flask lxml win10toast pystray Pillow
+pip install Flask lxml winotify pystray Pillow
 
 # Install PHP dependencies
 cd C:\xampp\htdocs\escpos-netprinter
@@ -449,15 +449,15 @@ The system uses 2 main ports:
 netstat -an | findstr :9100
 ```
 
-### Port 5000 (or 8100) - Web Interface
+### Port 8100 - Web Interface
 
 **Usage**: To view receipts in browser
 **Protocol**: HTTP
-**URL**: http://localhost:5000
+**URL**: http://localhost:8100
 
 **Check**:
 ```bash
-netstat -an | findstr :5000
+netstat -an | findstr :8100
 ```
 
 ---
@@ -478,7 +478,7 @@ netstat -an | findstr :5000
            │ TCP Socket (127.0.0.1:9100)
            ▼
 ┌─────────────────────┐
-│ escpos-netprinter   │  (Port 9100 + Web 5000)
+│ escpos-netprinter   │  (Port 9100 + Web 8100)
 │  (Python/Flask)     │
 └──────────┬──────────┘
            │
@@ -502,7 +502,7 @@ This system should not be exposed to the internet:
 
 If network access is needed:
 - Allow access only from trusted local network
-- Open ports 9100 and 5000 only to local network
+- Open ports 9100 and 8100 only to local network
 - Use VPN
 
 ### 3. Protect Receipt Data

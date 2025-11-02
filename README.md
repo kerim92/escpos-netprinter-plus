@@ -59,7 +59,7 @@ Perfect for development, testing, and production environments where you need to 
 - Flask (web server)
 - lxml (HTML/XML processing)
 - Platform-specific notification libraries:
-  - **Windows**: win10toast (✅ Tested)
+  - **Windows**: winotify (✅ Tested)
   - **macOS**: osascript (⚠️ Untested - community feedback welcome!)
   - **Linux**: notify-send (⚠️ Untested - community feedback welcome!)
 
@@ -102,7 +102,7 @@ cd escpos-netprinter-plus
 pip install Flask lxml
 
 # Windows only (for toast notifications)
-pip install win10toast
+pip install winotify
 ```
 
 Or use requirements.txt (automatically installs platform-specific packages):
@@ -112,7 +112,7 @@ pip install -r requirements.txt
 ```
 
 **Platform-Specific Notes:**
-- **Windows**: `win10toast` will be installed automatically
+- **Windows**: `winotify` will be installed automatically
 - **macOS**: No extra Python packages needed (uses osascript)
 - **Linux**: Install system package: `sudo apt-get install libnotify-bin`
 
@@ -506,7 +506,7 @@ This is a fork of [escpos-netprinter](https://github.com/gilbertfl/escpos-netpri
 - **[chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)** - QR code generator (MIT License)
 - **[Flask](https://flask.palletsprojects.com/)** - Python web framework (BSD License)
 - **[lxml](https://lxml.de/)** - XML/HTML processing library (BSD License)
-- **[win10toast](https://github.com/jithurjacob/Windows-10-Toast-Notifications)** - Windows notifications (BSD License)
+- **[winotify](https://github.com/versa-syahptr/winotify)** - Windows notifications (MIT License)
 
 ### Special Thanks
 

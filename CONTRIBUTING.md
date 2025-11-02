@@ -166,9 +166,14 @@ telnet localhost 9100
 
 **Notification Test**:
 ```python
-from win10toast import ToastNotifier
-toaster = ToastNotifier()
-toaster.show_toast("Test", "Testing notifications", duration=5)
+from winotify import Notification
+toast = Notification(
+    app_id="ESC/POS Printer",
+    title="Test",
+    msg="Testing notifications",
+    duration="short"
+)
+toast.show()
 ```
 
 ## Style Guidelines
@@ -192,17 +197,14 @@ def show_notification(elapsed_time):
     """
     elapsed_str = f"{elapsed_time:.2f} seconds"
 
-    # Use threading to avoid blocking the main process
-    def _show():
-        toaster.show_toast(
-            "Printer - Success",
-            f"Receipt printed!\nDuration: {elapsed_str}",
-            duration=5,
-            threaded=False
-        )
-
-    notification_thread = threading.Thread(target=_show)
-    notification_thread.start()
+    # Create and show notification
+    toast = Notification(
+        app_id="ESC/POS Network Printer",
+        title="Printer - Success",
+        msg=f"Receipt printed!\nDuration: {elapsed_str}",
+        duration="short"
+    )
+    toast.show()
 ```
 
 ### PHP Code Style
