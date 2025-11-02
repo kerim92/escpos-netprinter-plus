@@ -372,13 +372,14 @@ Average should be < 0.5 seconds per receipt.
 Manually trigger notification (Python):
 
 ```python
-from win10toast import ToastNotifier
-toaster = ToastNotifier()
-toaster.show_toast(
-    "Printer - Success",
-    "Receipt printed!\nDuration: 0.25 seconds",
-    duration=5
+from winotify import Notification
+toast = Notification(
+    app_id="ESC/POS Network Printer",
+    title="Printer - Success",
+    msg="Receipt printed!\nDuration: 0.25 seconds",
+    duration="short"
 )
+toast.show()
 ```
 
 ## 🌐 Web Interface
