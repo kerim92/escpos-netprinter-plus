@@ -230,7 +230,7 @@ python escpos-netprinter.py
 ```
 
 The server will start with default settings:
-- **Web Interface**: http://localhost:5000
+- **Web Interface**: http://localhost:8100
 - **JetDirect Port**: 9100
 - **LPD Port**: 515
 
@@ -298,7 +298,7 @@ For automatic startup on Linux, add to systemd:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FLASK_RUN_HOST` | `127.0.0.1` | Web server host (use `0.0.0.0` for network access) |
-| `FLASK_RUN_PORT` | `80` | Web interface port |
+| `FLASK_RUN_PORT` | `8100` | Web interface port |
 | `PRINTER_PORT` | `9100` | JetDirect printer port |
 | `ESCPOS_DEBUG` | `false` | Enable verbose logging |
 
@@ -326,13 +326,13 @@ Check if ports are listening:
 
 ```bash
 netstat -an | findstr :9100
-netstat -an | findstr :5000
+netstat -an | findstr :8100
 ```
 
 Expected output:
 ```
 TCP    0.0.0.0:9100           0.0.0.0:0              LISTENING
-TCP    0.0.0.0:5000           0.0.0.0:0              LISTENING
+TCP    0.0.0.0:8100           0.0.0.0:0              LISTENING
 ```
 
 ### Test 2: Simple Print Test
@@ -351,7 +351,7 @@ Hello World
 
 Press `Ctrl+]`, then type `quit`.
 
-Check web interface at http://localhost:5000/receipts - you should see the receipt.
+Check web interface at http://localhost:8100/receipts - you should see the receipt.
 
 ### Test 3: Performance Test
 
@@ -385,7 +385,7 @@ toaster.show_toast(
 
 ### Main Page
 ```
-http://localhost:5000/
+http://localhost:8100/
 ```
 
 Shows:
@@ -395,7 +395,7 @@ Shows:
 
 ### Receipt List
 ```
-http://localhost:5000/receipts
+http://localhost:8100/receipts
 ```
 
 Browse all printed receipts:
@@ -405,7 +405,7 @@ Browse all printed receipts:
 
 ### Individual Receipt
 ```
-http://localhost:5000/receipts/receipt2025Jan02_143045.123456EST.html
+http://localhost:8100/receipts/receipt2025Jan02_143045.123456EST.html
 ```
 
 View specific receipt in full-screen HTML format.
